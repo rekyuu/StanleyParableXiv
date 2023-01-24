@@ -1,0 +1,16 @@
+{
+  "Author": "rekyuu",
+  "Name": "Stanley Parable XIV",
+  "Punchline": "Witty commentary to the brilliant things you do.",
+  "Description": "Check /narrator for full volume options or use /narratorvolume to set it manually.",
+  "InternalName": "StanleyParableXiv",
+  "RepoUrl": "https://github.com/rekyuu/StanleyParableXiv",
+  "ApplicableVersion": "any",
+  "Tags": [
+    "narrator",
+    "sound",
+    "plugin",
+    "Stanley Parable",
+    "narrator"
+  ]
+}

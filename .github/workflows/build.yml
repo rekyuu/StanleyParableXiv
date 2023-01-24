@@ -1,0 +1,35 @@
+name: .NET Build
+
+on:
+  push:
+    branches: '*'
+    tags: '*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.x.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Download Dalamud
+        run: |
+          Invoke-WebRequest -Uri https://goatcorp.github.io/dalamud-distrib/stg/latest.zip -OutFile latest.zip
+          Expand-Archive -Force latest.zip "$env:AppData\XIVLauncher\addon\Hooks\dev\"
+      - name: Build
+        run: |
+          dotnet build --no-restore --configuration Release --nologo
+      - name: Archive
+        run: Compress-Archive -Path StanleyParableXiv/bin/Release/* -DestinationPath StanleyParableXiv.zip
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v2.2.1
+        with:
+          path: |
+            ./StanleyParableXiv/bin/Release/*
