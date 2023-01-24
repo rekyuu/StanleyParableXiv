@@ -27,7 +27,7 @@ jobs:
         run: |
           dotnet build --no-restore --configuration Release --nologo
       - name: Archive
-        run: Compress-Archive -Path StanleyParableXiv/bin/Release/* -DestinationPath StanleyParableXiv.zip
+        run: Compress-Archive -Path StanleyParableXiv/bin/x64/Release/* -DestinationPath StanleyParableXiv.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1
         with:
