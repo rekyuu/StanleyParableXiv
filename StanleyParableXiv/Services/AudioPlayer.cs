@@ -2,11 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Logging;
-using Dalamud.Plugin;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
+using StanleyParableXiv.Services;
+using StanleyParableXiv.Utility;
 
-namespace StanleyParableXiv;
+namespace StanleyParableXiv.Services;
 
 public enum AudioEvent
 {
@@ -19,7 +20,7 @@ public enum AudioEvent
     EncounterStart,
     Failure,
     Login,
-    MarketboardPurchase,
+    MarketBoardPurchase,
     PvpPrepare,
     PvpStart,
     PvpWin,
@@ -30,8 +31,7 @@ public enum AudioEvent
 
 public class AudioPlayer : IDisposable
 {
-    private readonly DalamudPluginInterface _pluginInterface;
-    private readonly Configuration _configuration;
+    public static AudioPlayer Instance { get; } = new();
     
     private readonly IWavePlayer _outputDevice;
     private readonly VolumeSampleProvider _sampleProvider;
@@ -42,7 +42,7 @@ public class AudioPlayer : IDisposable
     private bool _shrimpFactFollowUp = false;
     private readonly Dictionary<AudioEvent, string> _lastPlayed = new();
 
-    private object _lockObj = new();
+    private readonly object _lockObj = new();
     
     private readonly Dictionary<AudioEvent, string[]> _audioEventMap = new()
     {
@@ -171,7 +171,7 @@ public class AudioPlayer : IDisposable
             }
         },
         { 
-            AudioEvent.MarketboardPurchase, new []
+            AudioEvent.MarketBoardPurchase, new []
             {
                 "announcer_dlc_stanleyparable/announcer_purchase_01.mp3",
                 "announcer_dlc_stanleyparable/announcer_purchase_02.mp3",
@@ -278,11 +278,8 @@ public class AudioPlayer : IDisposable
         },
     };
 
-    public AudioPlayer(Plugin plugin)
+    public AudioPlayer()
     {
-        _pluginInterface = plugin.PluginInterface;
-        _configuration = plugin.Configuration;
-
         _outputDevice = new WaveOutEvent();
         _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
         {
@@ -309,17 +306,17 @@ public class AudioPlayer : IDisposable
 
         try
         {
-            if (_configuration.BindToXivVolumeSource)
+            if (Configuration.Instance.BindToXivVolumeSource)
             {
-                uint baseVolume = XivUtility.GetVolume(_configuration.XivVolumeSource);
+                uint baseVolume = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);
                 uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
-                uint baseVolumeBoost = _configuration.XivVolumeSourceBoost;
+                uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
 
                 targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
             }
             else
             {
-                targetVolume = Math.Clamp(_configuration.Volume, 0, 100) / 100f;
+                targetVolume = Math.Clamp(Configuration.Instance.Volume, 0, 100) / 100f;
             }
         }
         catch (Exception ex)
@@ -363,7 +360,7 @@ public class AudioPlayer : IDisposable
     {
         if (_isPlaying) return;
         
-        string audioPath = Utility.GetResourcePath(_pluginInterface, resourcePath);
+        string audioPath = DalamudUtility.GetResourcePath(DalamudService.PluginInterface, resourcePath);
         PluginLog.Debug("Playing {ResourcePath}", resourcePath);
         
         using AudioFileReader audioFile = new(audioPath);

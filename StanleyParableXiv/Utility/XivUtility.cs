@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Dalamud.Logging;
 using Dalamud.Memory;
 
-namespace StanleyParableXiv;
+namespace StanleyParableXiv.Utility;
 
 public enum XivVolumeSource
 {

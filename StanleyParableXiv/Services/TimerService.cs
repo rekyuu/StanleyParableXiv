@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace StanleyParableXiv;
+namespace StanleyParableXiv.Services;
 
 public class TimerService : IDisposable
 {
