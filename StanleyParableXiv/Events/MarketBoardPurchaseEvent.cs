@@ -6,6 +6,8 @@ namespace StanleyParableXiv.Events;
 
 public class MarketBoardPurchaseEvent : IDisposable
 {
+    private DateTimeOffset _marketBoardPurchaseCooldown; 
+    
     public MarketBoardPurchaseEvent()
     {
         DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
@@ -19,9 +21,11 @@ public class MarketBoardPurchaseEvent : IDisposable
     private void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
         NetworkMessageDirection direction)
     {
-        if (opCode == DalamudService.DataManager.ServerOpCodes["MarketBoardPurchase"])
-        {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
-        }
+        if (opCode != DalamudService.DataManager.ServerOpCodes["MarketBoardPurchase"]) return;
+        if (_marketBoardPurchaseCooldown > DateTimeOffset.Now) return;
+        
+        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
+        
+        _marketBoardPurchaseCooldown = DateTimeOffset.Now + TimeSpan.FromMinutes(1);
     }
 }

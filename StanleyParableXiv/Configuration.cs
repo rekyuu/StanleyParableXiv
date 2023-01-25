@@ -1,5 +1,4 @@
 ﻿using Dalamud.Configuration;
-using Dalamud.Plugin;
 using System;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
