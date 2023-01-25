@@ -18,6 +18,7 @@ public class DutyEvent : IDisposable
 
     private TerritoryType? _currentTerritory;
     private bool _isBoundByDuty = false;
+    private bool _victoryPlayed = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
     
     public DutyEvent()
@@ -42,7 +43,7 @@ public class DutyEvent : IDisposable
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isBoundByDuty = isBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
 
-        if (_isBoundByDuty && !isBoundByDuty) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+        if (_isBoundByDuty && !isBoundByDuty && !_victoryPlayed) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
             
         _isBoundByDuty = isBoundByDuty;
     }
@@ -108,12 +109,14 @@ public class DutyEvent : IDisposable
         {
             // Encounter Start
             case 0x6D when updateType == 0x40000001:
+                _victoryPlayed = false;
                 AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
                 break;
             // Encounter Complete
             case 0x6D when updateType == 0x40000003:
                 Task.Delay(1000).ContinueWith(_ =>
                 {
+                    _victoryPlayed = true;
                     AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
                 });
                 break;
