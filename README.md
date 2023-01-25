@@ -18,6 +18,8 @@ Add the following repo to your Custom Plugin Repositories and install the plugin
 
 [Roselyyn](https://github.com/Roselyyn) for inspiration from the Elden Ring plugin and for the audio playback methodology.
 
+[MidoriKami](https://github.com/MidoriKami) for excellent code examples used for events.
+
 [xivdev](https://github.com/xivdev) for the CI/CD workflow.
 
 Many other plugin developers whose code I referenced to help understand hooking and listening for various events.
