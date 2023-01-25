@@ -11,6 +11,7 @@ public class EventService : IDisposable
     private readonly LoginEvent _loginEvent;
     private readonly MarketBoardPurchaseEvent _marketBoardPurchaseEvent;
     private readonly PlayerDeathEvent _playerDeathEvent;
+    private readonly PvpEvent _pvpEvent;
     private readonly SynthesisFailedEvent _synthesisFailedEvent;
     
     public EventService()
@@ -21,6 +22,7 @@ public class EventService : IDisposable
         _loginEvent = new LoginEvent();
         _marketBoardPurchaseEvent = new MarketBoardPurchaseEvent();
         _playerDeathEvent = new PlayerDeathEvent();
+        _pvpEvent = new PvpEvent();
         _synthesisFailedEvent = new SynthesisFailedEvent();
     }
     
@@ -32,6 +34,7 @@ public class EventService : IDisposable
         _loginEvent.Dispose();
         _marketBoardPurchaseEvent.Dispose();
         _playerDeathEvent.Dispose();
+        _pvpEvent.Dispose();
         _synthesisFailedEvent.Dispose();
     }
 }

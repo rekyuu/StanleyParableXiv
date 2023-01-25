@@ -19,14 +19,28 @@ public enum AudioEvent
     EncounterComplete,
     EncounterStart,
     Failure,
+    FirstBlood,
+    KillStreak3,
+    KillStreak4,
+    KillStreak5,
+    KillStreak6,
+    KillStreak7,
+    KillStreak8,
+    KillStreak9,
+    KillStreak10,
     Login,
     MarketBoardPurchase,
+    Multikill2,
+    Multikill3,
+    Multikill4,
+    Multikill5,
     PvpPrepare,
     PvpStart,
     PvpWin,
     Respawn,
     Reconnect,
     ShrimpFact,
+    Wipe
 }
 
 public class AudioPlayer : IDisposable
@@ -152,6 +166,104 @@ public class AudioPlayer : IDisposable
                 "announcer_dlc_stanleyparable/announcer_defeat_06.mp3",
             }
         },
+        {
+            AudioEvent.FirstBlood, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_1stblood_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_1stblood_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_1stblood_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_1stblood_04.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_1stblood_05.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak3, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_spree_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_spree_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_spree_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_spree_04.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak4, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_dominate_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_dominate_02.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak5, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_mega_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_mega_02.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak6, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_unstop_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_unstop_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_unstop_03.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak7, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wicked_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wicked_02.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak8, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_monster_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_monster_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_monster_03.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak9, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_godlike_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_godlike_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_godlike_03.mp3",
+            }
+        },
+        {
+            AudioEvent.KillStreak10, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_04.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_05.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_06.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_07.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_08.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_09.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_10.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_11.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_12.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_13.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_14.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_15.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_16.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_17.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_18.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_19.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_20.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_21.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_22.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_23.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_24.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_25.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_26.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_27.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_28.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_holy_29.mp3",
+            }
+        },
         { 
             AudioEvent.Login, new []
             {
@@ -168,6 +280,44 @@ public class AudioPlayer : IDisposable
                 "announcer_dlc_stanleyparable/announcer_welcome_17.mp3",
                 "announcer_dlc_stanleyparable/announcer_welcome_19.mp3",
                 "announcer_dlc_stanleyparable/announcer_welcome_21.mp3",
+            }
+        },
+        { 
+            AudioEvent.Multikill2, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_04.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_05.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_06.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_07.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_double_08.mp3",
+            }
+        },
+        { 
+            AudioEvent.Multikill3, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_triple_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_triple_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_triple_03.mp3",
+            }
+        },
+        { 
+            AudioEvent.Multikill4, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_ultra_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_ultra_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_ultra_03.mp3",
+            }
+        },
+        { 
+            AudioEvent.Multikill5, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_rampage_01.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_rampage_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_rampage_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_rampage_04.mp3",
             }
         },
         { 
@@ -241,7 +391,6 @@ public class AudioPlayer : IDisposable
             {
                 "announcer_dlc_stanleyparable/announcer_respawn_01.mp3",
                 "announcer_dlc_stanleyparable/announcer_respawn_02.mp3",
-                "announcer_dlc_stanleyparable/announcer_respawn_03.mp3",
                 "announcer_dlc_stanleyparable/announcer_respawn_04.mp3",
                 "announcer_dlc_stanleyparable/announcer_respawn_05.mp3",
                 "announcer_dlc_stanleyparable/announcer_respawn_06.mp3",
@@ -254,7 +403,6 @@ public class AudioPlayer : IDisposable
             {
                 "announcer_dlc_stanleyparable/announcer_player_reconnect_01.mp3",
                 "announcer_dlc_stanleyparable/announcer_player_reconnect_02.mp3",
-                "announcer_dlc_stanleyparable/announcer_player_reconnect_03.mp3",
                 "announcer_dlc_stanleyparable/announcer_player_reconnect_04.mp3",
                 "announcer_dlc_stanleyparable/announcer_player_reconnect_05.mp3",
                 "announcer_dlc_stanleyparable/announcer_unpause_01.mp3",
@@ -274,6 +422,20 @@ public class AudioPlayer : IDisposable
                 "announcer_dlc_stanleyparable/announcer_shrimp_03.mp3",
                 "announcer_dlc_stanleyparable/announcer_shrimp_04.mp3",
                 "announcer_dlc_stanleyparable/announcer_shrimp_05.mp3",
+            }
+        },
+        { 
+            AudioEvent.Wipe, new []
+            {
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_04.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_05.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_06.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_07.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_kill_wipeout_you_08.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_ownage_them_02.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_ownage_them_03.mp3",
+                "announcer_dlc_stanleyparable_killing_spree/announcer_ownage_them_04.mp3",
             }
         },
     };
@@ -332,8 +494,6 @@ public class AudioPlayer : IDisposable
     
     public void PlayRandomSoundFromCategory(AudioEvent @event)
     {
-        PluginLog.Debug("Waiting for lock to play audio for {Event}", @event);
-        
         lock (_lockObj)
         {
             if (_isPlaying) return;

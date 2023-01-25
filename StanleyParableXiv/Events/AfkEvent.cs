@@ -32,8 +32,7 @@ public class AfkEvent : IDisposable
     private unsafe long OnAfkTimerHook(IntPtr a1, float a2)
     {
         _afkTimerBaseAddress = a1;
-        PluginLog.Debug($"Found AFK timer base address: {_afkTimerBaseAddress:X16}");
-
+        
         _afkTimerService = new TimerService(30, () =>
         {
             if (_afkPlayed) return;
@@ -70,7 +69,5 @@ public class AfkEvent : IDisposable
         }
 
         _afkTimerHook?.Dispose();
-            
-        PluginLog.Debug("AFK timer hook disposed.");
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using StanleyParableXiv.Services;
 
@@ -24,11 +25,13 @@ public class PlayerDeathEvent : IDisposable
         PlayerCharacter? player = DalamudService.ClientState.LocalPlayer;
         if (player == null) return;
 
-        if (_isDead && !player.IsDead)
+        bool isDeadNext = player.IsDead;
+
+        if (_isDead && !isDeadNext && !DalamudService.Condition[ConditionFlag.BetweenAreas])
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Respawn);    
         }
-            
-        _isDead = player.IsDead;
+        
+        _isDead = isDeadNext;
     }
 }
