@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
-using Dalamud.Game.ClientState.Objects.Types;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Network;
 using Dalamud.Logging;
@@ -17,7 +16,6 @@ namespace StanleyParableXiv.Events;
 
 public class DutyEvent : IDisposable
 {
-
     private TerritoryType? _currentTerritory;
     private bool _isBoundByDuty = false;
     private bool _dutyStarted = false;
@@ -39,8 +37,8 @@ public class DutyEvent : IDisposable
     private void CheckIfPlayerIsBoundByDuty()
     {
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
-                             DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
-                             DalamudService.Condition[ConditionFlag.BoundByDuty95];
+            DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
+            DalamudService.Condition[ConditionFlag.BoundByDuty95];
 
         // Ignore Island Sanctuary
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);

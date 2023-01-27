@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using Dalamud.Logging;
 using Dalamud.Memory;
+using FFXIVClientStructs.FFXIV.Client.System.Framework;
+using FFXIVClientStructs.FFXIV.Common.Configuration;
 
 namespace StanleyParableXiv.Utility;
 
@@ -20,37 +22,46 @@ public static class XivUtility
 {
     private static readonly Dictionary<XivVolumeSource, string> XivVolumeSourceMap = new()
     {
-        { XivVolumeSource.Bgm, "SoundBgm" },
-        { XivVolumeSource.Se, "SoundSe" },
-        { XivVolumeSource.Voice, "SoundVoice" },
-        { XivVolumeSource.Env, "SoundEnv" },
-        { XivVolumeSource.System, "SoundSystem" },
-        { XivVolumeSource.Perform, "SoundPerform" },
-        { XivVolumeSource.Master, "SoundMaster" },
+        { XivVolumeSource.Bgm, "Bgm" },
+        { XivVolumeSource.Se, "Se" },
+        { XivVolumeSource.Voice, "Voice" },
+        { XivVolumeSource.Env, "Env" },
+        { XivVolumeSource.System, "System" },
+        { XivVolumeSource.Perform, "Perform" },
+        { XivVolumeSource.Master, "Master" },
     };
 
     public static unsafe uint GetVolume(XivVolumeSource soundType)
     {
         string volumeSourceName = XivVolumeSourceMap[soundType];
+        string volumeSourceAmountKey = $"Sound{volumeSourceName}";
+        string volumeSourceMutedKey = $"IsSnd{volumeSourceName}";
+
+        uint? volumeAmount = null;
+        bool? volumeMuted = null;
         
         try
         {
-            var framework = FFXIVClientStructs.FFXIV.Client.System.Framework.Framework.Instance();
-            var configBase = framework->SystemConfig.CommonSystemConfig.ConfigBase;
+            Framework* framework = Framework.Instance();
+            ConfigBase configBase = framework->SystemConfig.CommonSystemConfig.ConfigBase;
 
             for (int i = 0; i < configBase.ConfigCount; i++)
             {
-                var entry = configBase.ConfigEntry[i];
+                ConfigEntry entry = configBase.ConfigEntry[i];
                 if (entry.Name == null) continue;
 
                 string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(entry.Name));
-                if (name != volumeSourceName) continue;
 
-                return entry.Value.UInt;
+                if (name == volumeSourceAmountKey) volumeAmount = entry.Value.UInt;
+                else if (name == volumeSourceMutedKey) volumeMuted = entry.Value.UInt == 1;
             }
 
-            PluginLog.Error("Unable to find config value for {VolumeSource}", volumeSourceName);
-            return 50;
+            if (volumeAmount == null || volumeMuted == null)
+            {
+                throw new Exception($"Unable to determine volume for {volumeSourceName}");
+            }
+
+            return volumeMuted.Value ? 0 : volumeAmount.Value;
         }
         catch (Exception ex)
         {

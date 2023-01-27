@@ -474,7 +474,8 @@ public class AudioPlayer : IDisposable
                 uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
                 uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
 
-                targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
+                if (baseVolume == 0) targetVolume = 0;
+                else targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
             }
             else
             {
