@@ -14,6 +14,10 @@ public class AfkEvent : IDisposable
     private TimerService? _afkTimerService;
     private bool _afkPlayed = false;
     
+    /// <summary>
+    /// Fires an event when a player is AFK for a certain time.
+    /// Referenced from https://github.com/NightmareXIV/AntiAfkKick
+    /// </summary>
     public AfkEvent()
     {
         _afkTimerHook = Hook<AfkTimerHookDelegate>.FromAddress(
@@ -36,13 +40,14 @@ public class AfkEvent : IDisposable
         _afkTimerService = new TimerService(30, () =>
         {
             if (_afkPlayed) return;
-                
+            
             float* afkTimer1 = (float*)(_afkTimerBaseAddress + 20);
             float* afkTimer2 = (float*)(_afkTimerBaseAddress + 24);
             float* afkTimer3 = (float*)(_afkTimerBaseAddress + 28);
             
             PluginLog.Verbose($"AFK Timers = {*afkTimer1}/{*afkTimer2}/{*afkTimer3}");
                 
+            // Not really sure what each timer is for, so we'll just pick the longest
             if (new[] { *afkTimer1, *afkTimer2, *afkTimer3 }.Max() > Configuration.Instance.AfkEventTimeframe)
             {
                 if (Configuration.Instance.EnableAfkEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);

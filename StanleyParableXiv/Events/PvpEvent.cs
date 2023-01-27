@@ -24,6 +24,9 @@ public class PvpEvent : IDisposable
     private Dictionary<string, uint> _multikills = new();
     private Dictionary<string, DateTimeOffset> _multikillCooldowns = new();
 
+    /// <summary>
+    /// Fires on specific PvP related events.
+    /// </summary>
     public PvpEvent()
     {
         _playerName = DalamudService.ClientState.LocalPlayer?.Name.TextValue!;
@@ -57,6 +60,7 @@ public class PvpEvent : IDisposable
     {
         ResetKillCounts();
 
+        // This needs to be done to determine who killed who
         foreach (PartyMember partyMember in DalamudService.PartyList)
         {
             string name = partyMember.Name.TextValue;
@@ -105,6 +109,9 @@ public class PvpEvent : IDisposable
                 string player1Name = player1.PlayerName;
                 string player2Name = player2.PlayerName;
 
+                // Can only seem to determine who is dead when they're in your party, 
+                // so this insane block of code determines who killed who based on who
+                // is still alive in the party.
                 if (_partyMembers.ContainsKey(player1Name))
                 {
                     if (_partyMembers[player1Name].IsDead)
@@ -136,6 +143,7 @@ public class PvpEvent : IDisposable
             }
             case (XivChatType)2874 when playerPayloads.Length == 1:
             {
+                // Determine who killed who depending on if you died or not.
                 if (isDead)
                 {
                     PlayerPayload killer = (PlayerPayload)playerPayloads[0];
@@ -157,6 +165,7 @@ public class PvpEvent : IDisposable
 
         PluginLog.Verbose("{KillerName} -> {KilledName}", killerName, killedName);
 
+        // Play on the first kill of the match.
         if (!_firstBlood)
         {
             _firstBlood = true;
@@ -168,6 +177,8 @@ public class PvpEvent : IDisposable
             }
         }
 
+        // Update multikills.
+        // Multikills are performed within a 15 second window. The timer is refreshed on kill. 
         if (!_multikillCooldowns.ContainsKey(killerName) || _multikillCooldowns[killerName] <= killTime)
         {
             _multikills[killerName] = 1;
@@ -182,7 +193,6 @@ public class PvpEvent : IDisposable
         PluginLog.Debug("{KillerName} multikill streak: {Count}", killerName, _multikills[killerName]);
 
         bool multikills = Configuration.Instance.EnablePvpMultikillsEvent;
-        bool killStreaks = Configuration.Instance.EnablePvpKillStreaksEvent;
         
         switch (_multikills[killerName])
         {
@@ -206,13 +216,17 @@ public class PvpEvent : IDisposable
                 if (multikills) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill5);
                 break;
         }
-
+        
+        // Update kill streaks.
+        // Resets to 0 on death.
         uint killedLastStreak = 0;
         if (_killStreaks.ContainsKey(killedName)) killedLastStreak = _killStreaks[killedName];
         
         _killStreaks[killedName] = 0;
         if (!_killStreaks.ContainsKey(killerName)) _killStreaks[killerName] = 1;
         else _killStreaks[killerName] += 1;
+        
+        bool killStreaks = Configuration.Instance.EnablePvpKillStreaksEvent;
         
         PluginLog.Debug("{KillerName} kill streak: {Count}", killerName, _killStreaks[killerName]);
         
@@ -256,6 +270,7 @@ public class PvpEvent : IDisposable
                 break;
         }
 
+        // Post a chat message if someone ended a kill streak.
         if (!chat) return;
         
         switch (killedLastStreak)

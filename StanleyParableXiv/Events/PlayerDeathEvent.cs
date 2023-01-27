@@ -10,6 +10,9 @@ public class PlayerDeathEvent : IDisposable
 {
     private bool _isDead = false;
     
+    /// <summary>
+    /// Fires when player respawns.
+    /// </summary>
     public PlayerDeathEvent()
     {
         DalamudService.Framework.Update += OnFrameworkUpdate;

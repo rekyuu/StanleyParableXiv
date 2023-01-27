@@ -31,6 +31,12 @@ public static class XivUtility
         { XivVolumeSource.Master, "Master" },
     };
 
+    /// <summary>
+    /// Gets the volume amount of the supplied FFXIV channel.
+    /// </summary>
+    /// <param name="soundType">The FFXIV volume channel.</param>
+    /// <returns>The volume amount between 0-100.</returns>
+    /// <exception cref="Exception">Will be thrown if the supplied channel is not found.</exception>
     public static unsafe uint GetVolume(XivVolumeSource soundType)
     {
         string volumeSourceName = XivVolumeSourceMap[soundType];

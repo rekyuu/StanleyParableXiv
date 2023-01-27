@@ -22,6 +22,10 @@ public class DutyEvent : IDisposable
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
     
+    /// <summary>
+    /// Fires various duty instance events.
+    /// Game network messages referenced from https://github.com/MidoriKami/KamiLib and https://github.com/Roselyyn/EldenRingDalamud
+    /// </summary>
     public DutyEvent()
     {
         DalamudService.Framework.Update += OnFrameworkUpdate;
@@ -44,6 +48,7 @@ public class DutyEvent : IDisposable
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
 
+        // Consider duty failed if it wasn't completed before leaving duty
         if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && Configuration.Instance.EnableDutyFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
@@ -61,6 +66,7 @@ public class DutyEvent : IDisposable
         uint[] partyStatusObjIds = _partyStatus.Keys.ToArray();
         uint[] partyListObjIds = DalamudService.PartyList.Select(x => x.ObjectId).ToArray();
 
+        // If the party member isn't in cache, remove them
         foreach (uint objId in partyStatusObjIds)
         {
             if (!partyListObjIds.Contains(objId)) _partyStatus.Remove(objId);
@@ -68,6 +74,7 @@ public class DutyEvent : IDisposable
         
         foreach (PartyMember partyMember in DalamudService.PartyList)
         {
+            // Skip if they're not in the same instance
             if (_currentTerritory != partyMember.Territory.GameData) continue;
             
             uint objId = partyMember.ObjectId;

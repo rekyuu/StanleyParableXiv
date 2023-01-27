@@ -440,6 +440,10 @@ public class AudioPlayer : IDisposable
         },
     };
 
+    /// <summary>
+    /// Service used for playing audio files from the Resources folder.
+    /// Audio mixer implementation referenced from https://github.com/Roselyyn/EldenRingDalamud
+    /// </summary>
     public AudioPlayer()
     {
         _outputDevice = new WaveOutEvent();
@@ -462,12 +466,18 @@ public class AudioPlayer : IDisposable
         _outputDevice.Dispose();
     }
 
+    /// <summary>
+    /// Updates the volume of the output mixer.
+    /// </summary>
     public void UpdateVolume()
     {
         float targetVolume = 0.5f;
 
         try
         {
+            // Updates the volume using the FFXIV configured volume.
+            // Takes the configured volume source and multiplies it by the master volume amount.
+            // Additionally adds volume boost before applying the master volume multiplier.
             if (Configuration.Instance.BindToXivVolumeSource)
             {
                 uint baseVolume = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);
@@ -477,6 +487,7 @@ public class AudioPlayer : IDisposable
                 if (baseVolume == 0) targetVolume = 0;
                 else targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
             }
+            // Updates the volume from the configured volume amount.
             else
             {
                 targetVolume = Math.Clamp(Configuration.Instance.Volume, 0, 100) / 100f;
@@ -493,6 +504,10 @@ public class AudioPlayer : IDisposable
         }
     }
     
+    /// <summary>
+    /// Plays a random sound from the supplied event enum.
+    /// </summary>
+    /// <param name="event">The event category.</param>
     public void PlayRandomSoundFromCategory(AudioEvent @event)
     {
         lock (_lockObj)
@@ -517,7 +532,11 @@ public class AudioPlayer : IDisposable
         }
     }
 
-    private void PlaySound(string resourcePath)
+    /// <summary>
+    /// Plays a sound from the supplied path in the Resources directory.
+    /// </summary>
+    /// <param name="resourcePath">The path of the file to paly.</param>
+    public void PlaySound(string resourcePath)
     {
         if (_isPlaying) return;
         
@@ -547,6 +566,7 @@ public class AudioPlayer : IDisposable
     {
         _isPlaying = false;
         
+        // Chains sounds together when needed.
         if (_shrimpFactFollowUp)
         {
             PlayRandomSoundFromCategory(AudioEvent.ShrimpFact);

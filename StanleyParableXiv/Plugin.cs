@@ -16,6 +16,8 @@ public sealed class Plugin : IDalamudPlugin
     public string Name => "Stanley Parable XIV";
 
     private readonly WindowSystem _windowSystem = new("StanleyParableXiv");
+    private readonly ConfigurationWindow _configWindow;
+
     private readonly EventService _eventService;
 
     private uint _lastXivVolumeSource = 0;
@@ -24,26 +26,36 @@ public sealed class Plugin : IDalamudPlugin
     public Plugin(DalamudPluginInterface pluginInterface)
     {
         PluginLog.Information("Starting plugin");
+        
+        // Initialize Dalamud services.
         DalamudService.Initialize(pluginInterface);
 
+        // Initialize the plugin commands.
         DalamudService.CommandManager.AddHandler("/narrator", new CommandInfo(OnConfigCommand)
         {
             HelpMessage = "Opens the Stanley Parable XIV configuration."
         });
-
+        
         DalamudService.CommandManager.AddHandler("/narratorvolume", new CommandInfo(OnVolumeCommand)
         {
             HelpMessage = "Sets the volume for the Narrator."
         });
             
-        _windowSystem.AddWindow(new ConfigurationWindow());
+        // Initialize the window system.
+        _configWindow = new ConfigurationWindow();
+        _windowSystem.AddWindow(_configWindow);
+        
+        // Initialize plugin event services.
         _eventService = new EventService();
 
+        // Initialize Dalamud action hooks
         DalamudService.PluginInterface.UiBuilder.Draw += DrawUi;
+        DalamudService.PluginInterface.UiBuilder.OpenConfigUi += OnOpenConfigUi;
         DalamudService.Framework.Update += OnFrameworkUpdate;
             
+        // Open the window by default on (hopefully) local debug builds
         #if DEBUG
-        _windowSystem.GetWindow(ConfigurationWindow.Name)!.IsOpen = true;
+        _configWindow.IsOpen = true;
         #endif
     }
 
@@ -56,16 +68,20 @@ public sealed class Plugin : IDalamudPlugin
             
         _windowSystem.RemoveAllWindows();
         DalamudService.CommandManager.RemoveHandler("/narrator");
+        DalamudService.CommandManager.RemoveHandler("/narratorsettings");
+        DalamudService.CommandManager.RemoveHandler("/narratorconfig");
         DalamudService.CommandManager.RemoveHandler("/narratorvolume");
 
         DalamudService.PluginInterface.UiBuilder.Draw -= DrawUi;
+        DalamudService.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
     }
 
-    private void OnConfigCommand(string command, string commandArgs)
-    {
-        _windowSystem.GetWindow(ConfigurationWindow.Name)!.IsOpen = true;
-    }
+    private void DrawUi() => _windowSystem.Draw();
+
+    private void OnOpenConfigUi() => _configWindow.IsOpen = true;
+
+    private void OnConfigCommand(string command, string commandArgs) => OnOpenConfigUi();
 
     private void OnVolumeCommand(string command, string commandArgs)
     {
@@ -87,18 +103,14 @@ public sealed class Plugin : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "Exception occurred while setting volume via command");
+            PluginLog.Debug(ex, "Exception occurred while setting volume via command");
             DalamudService.ChatGui.PrintError($"\"{commandArgs}\" is not a valid setting.");
         }
     }
 
-    private void DrawUi()
-    {
-        _windowSystem.Draw();
-    }
-
     private void OnFrameworkUpdate(Framework framework)
     {
+        // Updates the mixer volume when bound to an FFXIV volume source when changed.
         if (!Configuration.Instance.BindToXivVolumeSource) return;
 
         uint nextVolumeSource = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);

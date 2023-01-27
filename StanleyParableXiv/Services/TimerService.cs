@@ -10,6 +10,11 @@ public class TimerService : IDisposable
     private readonly uint _timerSeconds;
     private readonly Action _method;
 
+    /// <summary>
+    /// Runs the supplied action at the supplied cadence.
+    /// </summary>
+    /// <param name="timerSeconds">The amount of time to run the action.</param>
+    /// <param name="method">The action to run.</param>
     public TimerService(uint timerSeconds, Action method)
     {
         _timerSeconds = timerSeconds;
@@ -21,11 +26,17 @@ public class TimerService : IDisposable
         _timer?.Dispose();
     }
 
+    /// <summary>
+    /// Starts the method loop.
+    /// </summary>
     public void Start()
     {
         _timer = new Timer(RunMethod, null, TimeSpan.Zero, TimeSpan.FromSeconds(_timerSeconds));
     }
 
+    /// <summary>
+    /// Stops the method loop.
+    /// </summary>
     public void Stop()
     {
         _timer?.Change(Timeout.Infinite, 0);

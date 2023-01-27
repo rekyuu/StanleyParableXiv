@@ -10,9 +10,7 @@ namespace StanleyParableXiv.Ui;
 
 public class ConfigurationWindow : Window, IDisposable
 {
-    public static string Name => "Stanley Parable XIV Configuration";
-    
-    public ConfigurationWindow() : base(Name)
+    public ConfigurationWindow() : base("Stanley Parable XIV Configuration")
     {
         Size = new Vector2(320, 192);
         SizeCondition = ImGuiCond.FirstUseEver;

@@ -5,6 +5,9 @@ namespace StanleyParableXiv.Events;
 
 public class LoginEvent : IDisposable
 {
+    /// <summary>
+    /// Fires on login events.
+    /// </summary>
     public LoginEvent()
     {
         DalamudService.ClientState.Login += OnLogin;

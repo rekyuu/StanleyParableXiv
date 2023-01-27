@@ -8,6 +8,10 @@ public class MarketBoardPurchaseEvent : IDisposable
 {
     private DateTimeOffset _marketBoardPurchaseCooldown; 
     
+    /// <summary>
+    /// Fires on market board purchases.
+    /// Referenced from https://github.com/tesu/PennyPincher
+    /// </summary>
     public MarketBoardPurchaseEvent()
     {
         DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
@@ -21,6 +25,7 @@ public class MarketBoardPurchaseEvent : IDisposable
     private void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
         NetworkMessageDirection direction)
     {
+        // Will probably break on game updates until opcodes are updated.
         if (opCode != DalamudService.DataManager.ServerOpCodes["MarketBoardPurchase"]) return;
         if (_marketBoardPurchaseCooldown > DateTimeOffset.Now) return;
 
@@ -29,6 +34,7 @@ public class MarketBoardPurchaseEvent : IDisposable
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
         }
         
+        // Don't spam the user for multiple purchases
         _marketBoardPurchaseCooldown = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
     }
 }

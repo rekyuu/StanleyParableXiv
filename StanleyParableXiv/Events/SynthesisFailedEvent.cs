@@ -11,6 +11,10 @@ public class SynthesisFailedEvent : IDisposable
 {
     private readonly string _synthesisFailedMessage;
     
+    /// <summary>
+    /// Fires an event on crafting failure.
+    /// Referenced from https://github.com/Roselyyn/EldenRingDalamud
+    /// </summary>
     public SynthesisFailedEvent()
     {
         _synthesisFailedMessage = DalamudService.DataManager.GetExcelSheet<LogMessage>()!.GetRow(1160)!.Text.ToDalamudString().TextValue;

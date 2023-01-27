@@ -13,6 +13,10 @@ public class CountdownEvent : IDisposable
     private bool _countdownStartPlayed = false;
     private bool _countdown10Played = false;
     
+    /// <summary>
+    /// Fires on countdown start and when 10 seconds remain.
+    /// Referenced from https://github.com/xorus/EngageTimer
+    /// </summary>
     public CountdownEvent()
     {
         _countdownTimerHook = Hook<CountdownTimerHookDelegate>.FromAddress(
@@ -43,7 +47,8 @@ public class CountdownEvent : IDisposable
         
         PluginLog.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
 
-        if (countdownValue < 0f)
+        // Reset on countdown completion
+        if (countdownValue <= 0f)
         {
             _countdownStartPlayed = false;
             _countdown10Played = false;
@@ -51,12 +56,14 @@ public class CountdownEvent : IDisposable
             return _countdownTimerHook!.Original(value);
         }
 
+        // Countdown started
         if (!_countdownStartPlayed)
         {
             if (Configuration.Instance.EnableCountdownStartEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
             _countdownStartPlayed = true;
         }
 
+        // Countdown has 10 seconds remaining
         if (_countdownStartPlayed && !_countdown10Played && countdownValue < 10f)
         {
             if (Configuration.Instance.EnableCountdown10Event) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
