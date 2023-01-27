@@ -59,22 +59,3 @@ jobs:
           asset_path: ./StanleyParableXiv.zip
           asset_name: StanleyParableXiv.zip
           asset_content_type: application/zip
-      - name: Write out repo.json
-        run: |
-          $ver = '${{ github.ref }}' -replace 'refs/tags/',''
-          $path = './baseRepo.json'
-          $new_path = './repo.json'
-          $content = get-content -path $path
-          $content = $content -replace '1.0.0.0',$ver
-          set-content -Path $new_path -Value $content
-      - name: Commit repo.json
-        run: |
-          git config --global user.name "Actions User"
-          git config --global user.email "actions@github.com"
-
-          git fetch origin main
-          git checkout main
-          git add repo.json
-          git commit -m "[CI] Updating repo.json for ${{ github.ref }}" || true
-
-          git push origin main

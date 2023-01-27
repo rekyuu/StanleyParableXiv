@@ -6,7 +6,7 @@ A Dalamud plugin that provides witty commentary to your gameplay.
 
 Add the following repo to your Custom Plugin Repositories and install the plugin.
 
-`https://raw.githubusercontent.com/rekyuu/StanleyParableXiv/main/repo.json`
+`https://raw.githubusercontent.com/rekyuu/DalamudPlugins/main/repo.json`
 
 ## Usage
 
