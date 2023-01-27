@@ -1,5 +1,6 @@
 ﻿using Dalamud.Configuration;
 using System;
+using System.Collections.Generic;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
 
@@ -8,7 +9,7 @@ namespace StanleyParableXiv;
 [Serializable]
 public class Configuration : IPluginConfiguration
 {
-    public static Configuration Instance { get; } = DalamudService.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+    public static Configuration Instance { get; private set; } = DalamudService.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
     
     public int Version { get; set; } = 0;
 
@@ -148,10 +149,29 @@ public class Configuration : IPluginConfiguration
     public bool EnableSynthesisFailedEvent { get; set; } = true;
 
     /// <summary>
+    /// Enables multikill announcements for high end duties.
+    /// </summary>
+    public bool EnableBossKillStreaks { get; set; } = true;
+
+    /// <summary>
+    /// Counts of the user's completed high end duties.
+    /// </summary>
+    public Dictionary<uint, uint> CompletedHighEndDuties { get; set; } = new();
+
+    /// <summary>
     /// Saves the user configuration.
     /// </summary>
     public void Save()
     {
         DalamudService.PluginInterface.SavePluginConfig(this);
+    }
+
+    /// <summary>
+    /// Reloads the configuration.
+    /// </summary>
+    public static void Reload()
+    {
+        Instance = DalamudService.PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        DalamudService.ChatGui.Print("Narrator config reloaded.");
     }
 }

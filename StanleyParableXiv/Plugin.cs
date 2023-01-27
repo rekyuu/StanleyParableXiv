@@ -4,6 +4,8 @@ using Dalamud.Plugin;
 using Dalamud.Game;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using Lumina.Data;
+using Lumina.Excel.GeneratedSheets;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Ui;
 using StanleyParableXiv.Utility;
@@ -40,6 +42,16 @@ public sealed class Plugin : IDalamudPlugin
         {
             HelpMessage = "Sets the volume for the Narrator."
         });
+        
+        DalamudService.CommandManager.AddHandler("/narratortest", new CommandInfo(OnTestCommand)
+        {
+            ShowInHelp = false
+        });
+        
+        DalamudService.CommandManager.AddHandler("/narratorconfigreload", new CommandInfo(OnConfigReload)
+        {
+            ShowInHelp = false
+        });
             
         // Initialize the window system.
         _configWindow = new ConfigurationWindow();
@@ -69,6 +81,8 @@ public sealed class Plugin : IDalamudPlugin
         _windowSystem.RemoveAllWindows();
         DalamudService.CommandManager.RemoveHandler("/narrator");
         DalamudService.CommandManager.RemoveHandler("/narratorvolume");
+        DalamudService.CommandManager.RemoveHandler("/narratortest");
+        DalamudService.CommandManager.RemoveHandler("/narratorconfigreload");
 
         DalamudService.PluginInterface.UiBuilder.Draw -= DrawUi;
         DalamudService.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
@@ -105,6 +119,13 @@ public sealed class Plugin : IDalamudPlugin
             DalamudService.ChatGui.PrintError($"\"{commandArgs}\" is not a valid setting.");
         }
     }
+
+    private void OnTestCommand(string command, string commandArgs)
+    {
+        
+    }
+
+    private void OnConfigReload(string command, string arguments) => Configuration.Reload();
 
     private void OnFrameworkUpdate(Framework framework)
     {

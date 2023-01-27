@@ -4,6 +4,9 @@ using Dalamud.Logging;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Common.Configuration;
+using Lumina.Data;
+using Lumina.Excel.GeneratedSheets;
+using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Utility;
 
@@ -74,5 +77,39 @@ public static class XivUtility
             PluginLog.Error(ex, "An exception occurred while obtaining volume");
             return 50;
         }
+    }
+
+    /// <summary>
+    /// Checks if the territory is Unreal, Extreme, Savage, or Ultimate difficulty.
+    /// </summary>
+    /// <param name="territoryType">The territory to check against.</param>
+    /// <returns>True if high-end, false otherwise.</returns>
+    public static bool TerritoryIsHighEndDuty(ushort territoryType)
+    {
+        string name = DalamudService.DataManager.Excel
+            .GetSheet<TerritoryType>(Language.English)!
+            .GetRow(territoryType)!
+            .ContentFinderCondition.Value!
+            .Name
+            .RawString;
+
+        bool isHighEndDuty = name.StartsWith("the Minstrel's Ballad")
+            || name.EndsWith("(Unreal)")
+            || name.EndsWith("(Extreme)")
+            || name.EndsWith("(Savage)")
+            || name.EndsWith("(Ultimate)");
+        
+        PluginLog.Debug("{DutyName} is high end: {IsHighEnd}", name, isHighEndDuty);
+
+        return isHighEndDuty;
+    }
+
+    /// <summary>
+    /// Checks if player's current territory is Unreal, Extreme, Savage, or Ultimate difficulty.
+    /// </summary>
+    /// <returns>True if high-end, false otherwise.</returns>
+    public static bool PlayerIsInHighEndDuty()
+    {
+        return TerritoryIsHighEndDuty(DalamudService.ClientState.TerritoryType);
     }
 }

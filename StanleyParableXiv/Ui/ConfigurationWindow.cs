@@ -193,6 +193,13 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                     
+                    bool enableBossKillStreaks = Configuration.Instance.EnableBossKillStreaks;
+                    if (ImGui.Checkbox("High End Boss Kill Streaks", ref enableBossKillStreaks))
+                    {
+                        Configuration.Instance.EnableBossKillStreaks = enableBossKillStreaks;
+                        Configuration.Instance.Save();
+                    }
+                    
                     ImGui.Separator();
                     
                     bool enablePlayerDisconnect = Configuration.Instance.EnableDutyPlayerDisconnectedEvent;

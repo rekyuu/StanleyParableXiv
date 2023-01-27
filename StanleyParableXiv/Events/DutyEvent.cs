@@ -147,6 +147,67 @@ public class DutyEvent : IDisposable
                 _dutyStarted = false;
                 _dutyCompleted = true;
 
+                if (XivUtility.PlayerIsInHighEndDuty())
+                {
+                    uint territory = DalamudService.ClientState.TerritoryType;
+                    
+                    if (!Configuration.Instance.CompletedHighEndDuties.ContainsKey(territory))
+                    {
+                        Configuration.Instance.CompletedHighEndDuties[territory] = 1;
+                    }
+                    else
+                    {
+                        Configuration.Instance.CompletedHighEndDuties[territory] += 1;
+                    }
+                    
+                    Configuration.Instance.Save();
+                    
+                    PluginLog.Debug("Kills updated for {Territory}: {Kills}", territory, Configuration.Instance.CompletedHighEndDuties[territory]);
+
+                    if (Configuration.Instance.EnableBossKillStreaks)
+                    {
+                        switch (Configuration.Instance.CompletedHighEndDuties[territory])
+                        {
+                            case 15:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_15.mp3");
+                                break;
+                            case 20:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_20.mp3");
+                                break;
+                            case 30:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_30.mp3");
+                                break;
+                            case 50:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_50.mp3");
+                                break;
+                            case 69:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_69.mp3");
+                                break;
+                            case 70:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_70.mp3");
+                                break;
+                            case 71:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_71.mp3");
+                                break;
+                            case 85:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_85.mp3");
+                                break;
+                            case 90:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_90.mp3");
+                                break;
+                            case 99:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_99.mp3");
+                                break;
+                            case 100:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_100.mp3");
+                                break;
+                            case 101:
+                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_101.mp3");
+                                break;
+                        }
+                    }
+                }
+
                 if (Configuration.Instance.EnableDutyCompleteEvent)
                 {
                     Task.Delay(1000).ContinueWith(_ =>
