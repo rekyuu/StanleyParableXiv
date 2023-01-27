@@ -68,8 +68,6 @@ public sealed class Plugin : IDalamudPlugin
             
         _windowSystem.RemoveAllWindows();
         DalamudService.CommandManager.RemoveHandler("/narrator");
-        DalamudService.CommandManager.RemoveHandler("/narratorsettings");
-        DalamudService.CommandManager.RemoveHandler("/narratorconfig");
         DalamudService.CommandManager.RemoveHandler("/narratorvolume");
 
         DalamudService.PluginInterface.UiBuilder.Draw -= DrawUi;
