@@ -27,7 +27,7 @@ public class PlayerDeathEvent : IDisposable
 
         bool isDeadNext = player.IsDead;
 
-        if (_isDead && !isDeadNext && !DalamudService.Condition[ConditionFlag.BetweenAreas])
+        if (_isDead && !isDeadNext && !DalamudService.Condition[ConditionFlag.BetweenAreas] && Configuration.Instance.EnableRespawnEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Respawn);    
         }

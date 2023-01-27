@@ -25,7 +25,7 @@ public class SynthesisFailedEvent : IDisposable
 
     private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
     {
-        if (message.TextValue.Contains(_synthesisFailedMessage))
+        if (message.TextValue.Contains(_synthesisFailedMessage) && Configuration.Instance.EnableSynthesisFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }

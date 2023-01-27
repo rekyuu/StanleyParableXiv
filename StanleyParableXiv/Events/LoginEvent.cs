@@ -17,6 +17,9 @@ public class LoginEvent : IDisposable
 
     private void OnLogin(object? sender, EventArgs eventArgs)
     {
-        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Login);
+        if (Configuration.Instance.EnableLoginEvent)
+        {
+            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Login);
+        }
     }
 }

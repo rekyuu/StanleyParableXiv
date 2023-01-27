@@ -44,8 +44,11 @@ public class DutyEvent : IDisposable
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
 
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
-            
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && Configuration.Instance.EnableDutyFailedEvent)
+        {
+            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+        }
+        
         _isBoundByDuty = isNextBoundByDuty;
     }
 
@@ -88,9 +91,15 @@ public class DutyEvent : IDisposable
             if (!_dutyStarted) return;
             
             // Assume the player went offline (or left the instance)
-            if (nextStatus == null) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+            if (nextStatus == null && Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
+            {
+                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+            }
             // Assume the player reconnected
-            else if (lastStatus == null) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+            else if (lastStatus == null && Configuration.Instance.EnableDutyPlayerReconnectedEvent)
+            {
+                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+            }
         }
     }
 
@@ -116,8 +125,12 @@ public class DutyEvent : IDisposable
             case 0x6D when updateType == 0x40000001:
                 _dutyStarted = true;
                 _dutyCompleted = false;
+
+                if (Configuration.Instance.EnableDutyStartEvent)
+                {
+                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
+                }
                 
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
                 break;
             // Possible PvP complete
             case 0x6D when updateType == 0x40000002:
@@ -126,29 +139,45 @@ public class DutyEvent : IDisposable
             case 0x6D when updateType == 0x40000003:
                 _dutyStarted = false;
                 _dutyCompleted = true;
-                
-                Task.Delay(1000).ContinueWith(_ =>
+
+                if (Configuration.Instance.EnableDutyCompleteEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
-                });
+                    Task.Delay(1000).ContinueWith(_ =>
+                    {
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
+                    });
+                }
+                
                 break;
             // Start PvP Countdown 
             case 0x6D when updateType == 0x40000004:
                 _dutyStarted = true;
                 _dutyCompleted = false;
-                
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
-                Task.Delay(20_000).ContinueWith(_ =>
+
+                if (Configuration.Instance.EnablePvpCountdownStartEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
-                });
+                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+                }
+
+                if (Configuration.Instance.EnablePvpCountdown10Event)
+                {
+                    Task.Delay(20_000).ContinueWith(_ =>
+                    {
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
+                    });
+                }
+                
                 break;
             // Party Wipe
             case 0x6D when updateType == 0x40000005:
-                Task.Delay(1000).ContinueWith(_ =>
+                if (Configuration.Instance.EnableDutyPartyWipeEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
-                });
+                    Task.Delay(1000).ContinueWith(_ =>
+                    {
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
+                    });
+                }
+                
                 break;
             // Encounter Recommence
             case 0x6D when updateType == 0x40000006:
@@ -160,21 +189,29 @@ public class DutyEvent : IDisposable
             case 0x355 when updateType == 0x1F4:
                 _dutyStarted = false;
                 _dutyCompleted = true;
-                
-                Task.Delay(3000).ContinueWith(_ =>
+
+                if (Configuration.Instance.EnablePvpWinEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
-                });
+                    Task.Delay(3000).ContinueWith(_ =>
+                    {
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
+                    });
+                }
+                
                 break;
             // PvP loss
             case 0x355 when updateType == 0xFA:
                 _dutyStarted = false;
                 _dutyCompleted = true;
-                
-                Task.Delay(3000).ContinueWith(_ =>
+
+                if (Configuration.Instance.EnablePvpLossEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
-                });
+                    Task.Delay(3000).ContinueWith(_ =>
+                    {
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+                    });
+                }
+                
                 break;
         }
     }

@@ -53,13 +53,13 @@ public class CountdownEvent : IDisposable
 
         if (!_countdownStartPlayed)
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+            if (Configuration.Instance.EnableCountdownStartEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
             _countdownStartPlayed = true;
         }
 
         if (_countdownStartPlayed && !_countdown10Played && countdownValue < 10f)
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
+            if (Configuration.Instance.EnableCountdown10Event) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
             _countdown10Played = true;
         }
 

@@ -43,9 +43,9 @@ public class AfkEvent : IDisposable
             
             PluginLog.Verbose($"AFK Timers = {*afkTimer1}/{*afkTimer2}/{*afkTimer3}");
                 
-            if (new[] { *afkTimer1, *afkTimer2, *afkTimer3 }.Max() > 300f)
+            if (new[] { *afkTimer1, *afkTimer2, *afkTimer3 }.Max() > Configuration.Instance.AfkEventTimeframe)
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
+                if (Configuration.Instance.EnableAfkEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
                 _afkPlayed = true;
             }
             else _afkPlayed = false;

@@ -23,9 +23,12 @@ public class MarketBoardPurchaseEvent : IDisposable
     {
         if (opCode != DalamudService.DataManager.ServerOpCodes["MarketBoardPurchase"]) return;
         if (_marketBoardPurchaseCooldown > DateTimeOffset.Now) return;
+
+        if (Configuration.Instance.EnableMarketBoardPurchaseEvent)
+        {
+            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
+        }
         
-        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
-        
-        _marketBoardPurchaseCooldown = DateTimeOffset.Now + TimeSpan.FromMinutes(1);
+        _marketBoardPurchaseCooldown = DateTimeOffset.Now + TimeSpan.FromMinutes(5);
     }
 }
