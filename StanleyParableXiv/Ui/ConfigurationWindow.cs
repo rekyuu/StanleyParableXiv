@@ -94,6 +94,7 @@ public class ConfigurationWindow : Window, IDisposable
 
             if (ImGui.BeginTabItem("Event Settings"))
             {
+                ImGui.PushID("General");
                 if (ImGui.CollapsingHeader("General"))
                 {
                     bool enableLogin = Configuration.Instance.EnableLoginEvent;
@@ -143,7 +144,9 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                 }
+                ImGui.PopID();
 
+                ImGui.PushID("Countdown");
                 if (ImGui.CollapsingHeader("Countdown"))
                 {
                     bool enableCountdownEvent = Configuration.Instance.EnableCountdownStartEvent;
@@ -160,7 +163,9 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                 }
+                ImGui.PopID();
 
+                ImGui.PushID("Duty");
                 if (ImGui.CollapsingHeader("Duty"))
                 {
                     bool enableDutyStart = Configuration.Instance.EnableDutyStartEvent;
@@ -216,20 +221,22 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                 }
+                ImGui.PopID();
 
+                ImGui.PushID("PvP");
                 if (ImGui.CollapsingHeader("PvP"))
                 {
-                    bool enableCountdownEvent = Configuration.Instance.EnablePvpCountdownStartEvent;
-                    if (ImGui.Checkbox("Countdown Start", ref enableCountdownEvent))
+                    bool enablePvpCountdownEvent = Configuration.Instance.EnablePvpCountdownStartEvent;
+                    if (ImGui.Checkbox("Countdown Start", ref enablePvpCountdownEvent))
                     {
-                        Configuration.Instance.EnablePvpCountdownStartEvent = enableCountdownEvent;
+                        Configuration.Instance.EnablePvpCountdownStartEvent = enablePvpCountdownEvent;
                         Configuration.Instance.Save();
                     }
                     
-                    bool enableCountdown10Event = Configuration.Instance.EnablePvpCountdown10Event;
-                    if (ImGui.Checkbox("10 Seconds Remaining", ref enableCountdown10Event))
+                    bool enablePvpCountdown10Event = Configuration.Instance.EnablePvpCountdown10Event;
+                    if (ImGui.Checkbox("10 Seconds Remaining", ref enablePvpCountdown10Event))
                     {
-                        Configuration.Instance.EnablePvpCountdown10Event = enableCountdown10Event;
+                        Configuration.Instance.EnablePvpCountdown10Event = enablePvpCountdown10Event;
                         Configuration.Instance.Save();
                     }
                     
@@ -286,6 +293,7 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                 }
+                ImGui.PopID();
 
                 ImGui.EndTabItem();
             }
