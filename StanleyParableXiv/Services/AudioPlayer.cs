@@ -539,8 +539,8 @@ public class AudioPlayer : IDisposable
     public void PlaySound(string resourcePath)
     {
         if (_isPlaying) return;
-        
-        string audioPath = DalamudUtility.GetResourcePath(DalamudService.PluginInterface, resourcePath);
+
+        string audioPath = DalamudService.PluginInterface.GetPluginConfigDirectory() + "/assets/" + resourcePath;
         PluginLog.Debug("Playing {ResourcePath}", resourcePath);
         
         using AudioFileReader audioFile = new(audioPath);

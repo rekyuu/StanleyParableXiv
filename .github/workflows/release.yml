@@ -25,15 +25,12 @@ jobs:
         run: |
           $ver = '${{ github.ref }}' -replace 'refs/tags/',''
           invoke-expression 'dotnet build --no-restore --configuration Release --nologo -p:Version=$ver -p:FileVersion=$ver -p:AssemblyVersion=$ver'
-      - name: write version into json
+      - name: Archive
         run: |
           $ver = '${{ github.ref }}' -replace 'refs/tags/',''
-          $path = './StanleyParableXiv/bin/x64/Release/StanleyParableXiv.json'
-          $content = get-content -path $path
-          $content = $content -replace '1.0.0.0',$ver
-          set-content -Path $path -Value $content
-      - name: Archive
-        run: Compress-Archive -Path StanleyParableXiv/bin/x64/Release/* -DestinationPath StanleyParableXiv.zip
+          Compress-Archive -Path StanleyParableXiv/bin/x64/Release/* -DestinationPath StanleyParableXiv.zip
+          '{ "version": "$ver" }' | Out-File -FilePath '.\assets\manifest.json'
+          Compress-Archive -Path assets/* -DestinationPath assets.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1
         with:
@@ -49,7 +46,7 @@ jobs:
           release_name: StanleyParableXiv ${{ github.ref }}
           draft: false
           prerelease: false
-      - name: Upload Release Asset
+      - name: Upload Plugin Release
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
@@ -58,4 +55,14 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
           asset_path: ./StanleyParableXiv.zip
           asset_name: StanleyParableXiv.zip
+          asset_content_type: application/zip
+      - name: Upload Release Assets
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          asset_path: ./assets.zip
+          asset_name: assets.zip
           asset_content_type: application/zip

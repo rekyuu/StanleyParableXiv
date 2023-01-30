@@ -3,7 +3,7 @@
   <PropertyGroup>
     <Authors>rekyuu</Authors>
     <Company>rekyuu</Company>
-    <Version>1.0.0.0</Version>
+    <Version>1.2.1.0</Version>
     <Description>Witty commentary to the brilliant things you do.</Description>
     <Copyright>rekyuu</Copyright>
     <PackageProjectUrl>https://github.com/rekyuu/StanleyParableXiv</PackageProjectUrl>
@@ -21,17 +21,6 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Content Include="Resources\announcer_dlc_stanleyparable\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>false</Visible>
-    </Content>
-    <Content Include="Resources\announcer_dlc_stanleyparable_killing_spree\**">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Visible>false</Visible>
-    </Content>
-  </ItemGroup>
 
   <PropertyGroup>
     <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
