@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Game;
@@ -59,6 +60,16 @@ public sealed class Plugin : IDalamudPlugin
         
         // Initialize plugin event services.
         _eventService = new EventService();
+        
+        // Update assets.
+        try
+        {
+            Task.Run(AssetsManager.UpdateVoiceLines);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, "Exception occurred while updating assets");
+        }
 
         // Initialize Dalamud action hooks
         DalamudService.PluginInterface.UiBuilder.Draw += DrawUi;

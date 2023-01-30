@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Dalamud.Logging;
 using NAudio.Wave;
@@ -540,9 +541,15 @@ public class AudioPlayer : IDisposable
     {
         if (_isPlaying) return;
 
-        string audioPath = DalamudService.PluginInterface.GetPluginConfigDirectory() + "/assets/" + resourcePath;
-        PluginLog.Debug("Playing {ResourcePath}", resourcePath);
-        
+        string audioPath = $"{DalamudService.PluginInterface.GetPluginConfigDirectory()}/assets/{resourcePath}";
+        PluginLog.Debug("Attempting to play {ResourcePath}", resourcePath);
+
+        if (!File.Exists(audioPath))
+        {
+            PluginLog.Error("Audio file does not exist: {AudioPath}", audioPath);
+            return;
+        }
+
         using AudioFileReader audioFile = new(audioPath);
         _mixer.AddMixerInput(ConvertToCorrectChannelCount(audioFile));
         _isPlaying = true;
