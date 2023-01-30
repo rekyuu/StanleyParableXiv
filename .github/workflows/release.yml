@@ -29,7 +29,7 @@ jobs:
         run: |
           $ver = '${{ github.ref }}' -replace 'refs/tags/',''
           Compress-Archive -Path StanleyParableXiv/bin/x64/Release/* -DestinationPath StanleyParableXiv.zip
-          '{ "version": "$ver" }' | Out-File -FilePath '.\assets\manifest.json'
+          '{ "version": "' + $ver + '" }' | Out-File -FilePath '.\assets\manifest.json'
           Compress-Archive -Path assets/* -DestinationPath assets.zip
       - name: Upload a Build Artifact
         uses: actions/upload-artifact@v2.2.1
