@@ -10,7 +10,7 @@ namespace StanleyParableXiv;
 
 public static class AssetsManager
 {
-    private const string RequiredAssetsVersion = "1.2.1.0";
+    private const string? RequiredAssetsVersion = "1.2.2.0";
 
     /// <summary>
     /// Checks if the assets exist, are the current version, and downloads them if necessary.
@@ -92,5 +92,5 @@ public static class AssetsManager
 public class AssetsManifest
 {
     [JsonProperty("version")]
-    public string Version;
+    public string? Version { get; set; }
 }
