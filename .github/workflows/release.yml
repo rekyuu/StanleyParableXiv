@@ -40,7 +40,5 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          release_name: StanleyParableXiv ${{ github.ref }}
           file: ./*.zip
           file_glob: true
