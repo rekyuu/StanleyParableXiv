@@ -47,82 +47,9 @@ public class DutyEvent : IDisposable
     private void OnEnterPvP() => _isInPvp = true;
 
     private void OnLeavePvp() => _isInPvp = false;
-        
-    private void CheckIfPlayerIsBoundByDuty()
-    {
-        bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
-            DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
-            DalamudService.Condition[ConditionFlag.BoundByDuty95];
-        
-        // Ignore Island Sanctuary
-        _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
-        isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
-
-        // Consider duty failed if it wasn't completed before leaving duty
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && _isInQuestBattle && Configuration.Instance.EnableDutyFailedEvent)
-        {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
-        }
-        
-        _isBoundByDuty = isNextBoundByDuty;
-    }
-
-    private void CheckPartyMembers()
-    {
-        if (!_isBoundByDuty) return;
-        if (DalamudService.PartyList.Length == 0) return;
-        if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
-
-        uint[] partyStatusObjIds = _partyStatus.Keys.ToArray();
-        uint[] partyListObjIds = DalamudService.PartyList.Select(x => x.ObjectId).ToArray();
-
-        // If the party member isn't in cache, remove them
-        foreach (uint objId in partyStatusObjIds)
-        {
-            if (!partyListObjIds.Contains(objId)) _partyStatus.Remove(objId);
-        }
-        
-        foreach (PartyMember partyMember in DalamudService.PartyList)
-        {
-            // Skip if they're not in the same instance
-            if (_currentTerritory != partyMember.Territory.GameData) continue;
-            
-            uint objId = partyMember.ObjectId;
-            if (!_partyStatus.ContainsKey(objId)) _partyStatus[objId] = null;
-            
-            uint? nextStatus = null;
-            uint? lastStatus = _partyStatus[objId];
-            
-            PlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
-            if (player == null) continue;
-            
-            OnlineStatus? onlineStatus = player.OnlineStatus.GameData;
-            
-            if (onlineStatus != null) nextStatus = onlineStatus.RowId;
-            if (nextStatus == lastStatus) continue;
-            
-            _partyStatus[objId] = nextStatus;
-            PluginLog.Debug("Party member status changed = {PlayerId} {PlayerName}, {PreviousOnlineStatus} -> {NextOnlineStatus}", 
-                objId, partyMember.Name, lastStatus!, nextStatus!);
-
-            if (!_dutyStarted) return;
-            
-            // Assume the player went offline (or left the instance)
-            if (nextStatus == null && Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
-            {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
-            }
-            // Assume the player reconnected
-            else if (lastStatus == null && Configuration.Instance.EnableDutyPlayerReconnectedEvent)
-            {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
-            }
-        }
-    }
 
     private void OnFrameworkUpdate(Framework framework)
     {
-        _isInQuestBattle = _currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId == 7;
         CheckIfPlayerIsBoundByDuty();
         CheckPartyMembers();
     }
@@ -220,6 +147,85 @@ public class DutyEvent : IDisposable
                 }
                 
                 break;
+        }
+    }
+
+    private bool PlayerIsInQuestBattle()
+    {
+        return _currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId == 7;
+    }
+        
+    private void CheckIfPlayerIsBoundByDuty()
+    {
+        bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
+            DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
+            DalamudService.Condition[ConditionFlag.BoundByDuty95];
+        bool isNextInQuestBattle = PlayerIsInQuestBattle();
+        
+        // Ignore Island Sanctuary
+        _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
+        isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
+
+        // Consider duty failed if it wasn't completed before leaving duty
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInQuestBattle && Configuration.Instance.EnableDutyFailedEvent)
+        {
+            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+        }
+
+        _isBoundByDuty = isNextBoundByDuty;
+        _isInQuestBattle = isNextInQuestBattle;
+    }
+
+    private void CheckPartyMembers()
+    {
+        if (!_isBoundByDuty) return;
+        if (DalamudService.PartyList.Length == 0) return;
+        if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
+
+        uint[] partyStatusObjIds = _partyStatus.Keys.ToArray();
+        uint[] partyListObjIds = DalamudService.PartyList.Select(x => x.ObjectId).ToArray();
+
+        // If the party member isn't in cache, remove them
+        foreach (uint objId in partyStatusObjIds)
+        {
+            if (!partyListObjIds.Contains(objId)) _partyStatus.Remove(objId);
+        }
+        
+        foreach (PartyMember partyMember in DalamudService.PartyList)
+        {
+            // Skip if they're not in the same instance
+            if (_currentTerritory != partyMember.Territory.GameData) continue;
+            
+            uint objId = partyMember.ObjectId;
+            if (!_partyStatus.ContainsKey(objId)) _partyStatus[objId] = null;
+            
+            uint? nextStatus = null;
+            uint? lastStatus = _partyStatus[objId];
+            
+            PlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
+            if (player == null) continue;
+            
+            OnlineStatus? onlineStatus = player.OnlineStatus.GameData;
+            
+            if (onlineStatus != null) nextStatus = onlineStatus.RowId;
+            if (nextStatus == lastStatus) continue;
+            
+            _partyStatus[objId] = nextStatus;
+            PluginLog.Debug("Party member status changed = {PlayerId} {PlayerName}, {PreviousOnlineStatus} -> {NextOnlineStatus}", 
+                objId, partyMember.Name, lastStatus!, nextStatus!);
+
+            if (!_dutyStarted) return;
+            
+            // Assume the player went offline (or left the instance)
+            if (nextStatus == null && Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
+            {
+                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+            }
+            // Assume the player reconnected
+            else if (lastStatus == null && Configuration.Instance.EnableDutyPlayerReconnectedEvent)
+            {
+                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+            }
         }
     }
 
