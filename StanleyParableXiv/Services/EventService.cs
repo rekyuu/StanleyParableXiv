@@ -7,6 +7,7 @@ public class EventService : IDisposable
 {
     private readonly AfkEvent _afkEvent;
     private readonly CountdownEvent _countdownEvent;
+    private readonly DebugEvent _debugEvent;
     private readonly DutyEvent _dutyEvent;
     private readonly LoginEvent _loginEvent;
     private readonly MarketBoardPurchaseEvent _marketBoardPurchaseEvent;
@@ -24,6 +25,10 @@ public class EventService : IDisposable
         _playerDeathEvent = new PlayerDeathEvent();
         _pvpEvent = new PvpEvent();
         _synthesisFailedEvent = new SynthesisFailedEvent();
+        
+        #if DEBUG
+        _debugEvent = new DebugEvent();
+        #endif
     }
     
     public void Dispose()
@@ -36,5 +41,9 @@ public class EventService : IDisposable
         _playerDeathEvent.Dispose();
         _pvpEvent.Dispose();
         _synthesisFailedEvent.Dispose();
+        
+        #if DEBUG
+        _debugEvent.Dispose();
+        #endif
     }
 }

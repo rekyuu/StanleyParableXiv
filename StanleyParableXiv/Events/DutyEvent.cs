@@ -134,8 +134,6 @@ public class DutyEvent : IDisposable
         
         ushort cat = *(ushort*)(dataPtr + 0x00);
         uint updateType = *(uint*)(dataPtr + 0x08);
-        
-        PluginLog.Verbose("OpCode = {OpCode}, Cat = 0x{Cat:X}, UpdateType = 0x{UpdateType:X}", opCode, cat, updateType);
 
         switch (cat)
         {
