@@ -7,6 +7,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
 using Lumina.Data;
 using Lumina.Excel.GeneratedSheets;
+using Newtonsoft.Json;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Ui;
 using StanleyParableXiv.Utility;

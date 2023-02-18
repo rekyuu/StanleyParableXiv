@@ -20,6 +20,7 @@ public class DutyEvent : IDisposable
     private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
     private bool _isInQuestBattle = false;
+    private bool _isInCompanyWorkshop = false;
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
@@ -66,7 +67,7 @@ public class DutyEvent : IDisposable
         {
             // Encounter Start
             case 0x6D when updateType == 0x40000001:
-                if (_isInQuestBattle) break;
+                if (_isInQuestBattle || _isInCompanyWorkshop) break;
                 
                 _dutyStarted = true;
                 _dutyCompleted = false;
@@ -165,9 +166,10 @@ public class DutyEvent : IDisposable
         // Ignore Island Sanctuary
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
+        _isInCompanyWorkshop = _currentTerritory?.RowId == 653;
 
         // Consider duty failed if it wasn't completed before leaving duty
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInQuestBattle && Configuration.Instance.EnableDutyFailedEvent)
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInQuestBattle && !_isInCompanyWorkshop && Configuration.Instance.EnableDutyFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
@@ -178,7 +180,7 @@ public class DutyEvent : IDisposable
 
     private void CheckPartyMembers()
     {
-        if (!_isBoundByDuty) return;
+        if (!_isBoundByDuty || _isInCompanyWorkshop) return;
         if (DalamudService.PartyList.Length == 0) return;
         if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
 
