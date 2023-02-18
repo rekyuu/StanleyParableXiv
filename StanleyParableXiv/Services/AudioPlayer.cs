@@ -52,10 +52,14 @@ public class AudioPlayer : IDisposable
     private readonly VolumeSampleProvider _sampleProvider;
     private readonly MixingSampleProvider _mixer;
 
+    private float _originalVolume;
+    private float _killingSpreeVolume;
+    
     private bool _isPlaying = false;
     private bool _adviceFollowUp = false;
     private bool _shrimpFactFollowUp = false;
-    private readonly Dictionary<AudioEvent, string> _lastPlayed = new();
+    private string _lastPlayedClip = "";
+    private readonly Dictionary<AudioEvent, string> _lastPlayedByEvent = new();
 
     private readonly object _lockObj = new();
     
@@ -503,6 +507,9 @@ public class AudioPlayer : IDisposable
             PluginLog.Debug("Setting volume to {TargetVolume}", targetVolume);
             _sampleProvider.Volume = targetVolume;
         }
+
+        _originalVolume = _sampleProvider.Volume;
+        _killingSpreeVolume = _sampleProvider.Volume * 0.70f;
     }
     
     /// <summary>
@@ -516,20 +523,28 @@ public class AudioPlayer : IDisposable
             if (_isPlaying) return;
         
             string lastPlayed = "";
-            if (!_lastPlayed.ContainsKey(@event)) _lastPlayed[@event] = lastPlayed;
-            else lastPlayed = _lastPlayed[@event];
+            if (!_lastPlayedByEvent.ContainsKey(@event)) _lastPlayedByEvent[@event] = lastPlayed;
+            else lastPlayed = _lastPlayedByEvent[@event];
 
             Random random = new();
             string[] choices = _audioEventMap[@event].Where(x => x != lastPlayed).ToArray();
             int index = random.Next(0, choices.Length);
             string result = choices[index];
 
+            // Fix killing spree lines being louder than others
+            if (result.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
+            {
+                PluginLog.Debug("Lowering volume for Killing Spree line");
+                _sampleProvider.Volume = _killingSpreeVolume;
+            }
+
             PlaySound(result);
 
             if (result == "announcer_dlc_stanleyparable/announcer_respawn_09.mp3") _adviceFollowUp = true;
             if (result == "announcer_dlc_stanleyparable/announcer_idle_09.mp3") _shrimpFactFollowUp = true;
             
-            _lastPlayed[@event] = result;
+            _lastPlayedClip = result;
+            _lastPlayedByEvent[@event] = result;
         }
     }
 
@@ -572,6 +587,13 @@ public class AudioPlayer : IDisposable
     private void OnMixerInputEnded(object? sender, SampleProviderEventArgs e)
     {
         _isPlaying = false;
+        
+        // Restore fix killing spree lines being louder than others
+        if (_lastPlayedClip.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
+        {
+            PluginLog.Debug("Restoring volume for Killing Spree line");
+            _sampleProvider.Volume = _originalVolume;
+        }
         
         // Chains sounds together when needed.
         if (_shrimpFactFollowUp)
