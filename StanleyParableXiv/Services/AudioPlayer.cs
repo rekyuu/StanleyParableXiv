@@ -538,6 +538,7 @@ public class AudioPlayer : IDisposable
                 _sampleProvider.Volume = _killingSpreeVolume;
             }
 
+            PluginLog.Debug("Playing {Result} for event {Event}", result, @event);
             PlaySound(result);
 
             if (result == "announcer_dlc_stanleyparable/announcer_respawn_09.mp3") _adviceFollowUp = true;

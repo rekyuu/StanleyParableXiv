@@ -17,7 +17,9 @@ namespace StanleyParableXiv.Events;
 public class DutyEvent : IDisposable
 {
     private TerritoryType? _currentTerritory;
+    private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
+    private bool _isInQuestBattle = false;
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
@@ -28,28 +30,36 @@ public class DutyEvent : IDisposable
     /// </summary>
     public DutyEvent()
     {
+        DalamudService.ClientState.EnterPvP += OnEnterPvP;
+        DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.Framework.Update += OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
     }
     
     public void Dispose()
     {
+        DalamudService.ClientState.EnterPvP -= OnEnterPvP;
+        DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
     }
 
+    private void OnEnterPvP() => _isInPvp = true;
+
+    private void OnLeavePvp() => _isInPvp = false;
+        
     private void CheckIfPlayerIsBoundByDuty()
     {
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty95];
-
+        
         // Ignore Island Sanctuary
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
 
         // Consider duty failed if it wasn't completed before leaving duty
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && Configuration.Instance.EnableDutyFailedEvent)
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && _isInQuestBattle && Configuration.Instance.EnableDutyFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
@@ -112,6 +122,7 @@ public class DutyEvent : IDisposable
 
     private void OnFrameworkUpdate(Framework framework)
     {
+        _isInQuestBattle = _currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId == 7;
         CheckIfPlayerIsBoundByDuty();
         CheckPartyMembers();
     }
@@ -124,12 +135,14 @@ public class DutyEvent : IDisposable
         ushort cat = *(ushort*)(dataPtr + 0x00);
         uint updateType = *(uint*)(dataPtr + 0x08);
         
-        // PluginLog.Verbose("OpCode = {OpCode}, Cat = 0x{Cat:X}, UpdateType = 0x{UpdateType:X}", opCode, cat, updateType);
+        PluginLog.Verbose("OpCode = {OpCode}, Cat = 0x{Cat:X}, UpdateType = 0x{UpdateType:X}", opCode, cat, updateType);
 
         switch (cat)
         {
             // Encounter Start
             case 0x6D when updateType == 0x40000001:
+                if (_isInQuestBattle) break;
+                
                 _dutyStarted = true;
                 _dutyCompleted = false;
 
@@ -139,83 +152,10 @@ public class DutyEvent : IDisposable
                 }
                 
                 break;
-            // Possible PvP complete
-            case 0x6D when updateType == 0x40000002:
-                break;
-            // Encounter Complete
-            case 0x6D when updateType == 0x40000003:
-                _dutyStarted = false;
-                _dutyCompleted = true;
-
-                if (XivUtility.PlayerIsInHighEndDuty())
-                {
-                    uint territory = DalamudService.ClientState.TerritoryType;
-                    
-                    if (!Configuration.Instance.CompletedHighEndDuties.ContainsKey(territory))
-                    {
-                        Configuration.Instance.CompletedHighEndDuties[territory] = 1;
-                    }
-                    else
-                    {
-                        Configuration.Instance.CompletedHighEndDuties[territory] += 1;
-                    }
-                    
-                    Configuration.Instance.Save();
-                    
-                    PluginLog.Debug("Kills updated for {Territory}: {Kills}", territory, Configuration.Instance.CompletedHighEndDuties[territory]);
-
-                    if (Configuration.Instance.EnableBossKillStreaks)
-                    {
-                        switch (Configuration.Instance.CompletedHighEndDuties[territory])
-                        {
-                            case 15:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_15.mp3");
-                                break;
-                            case 20:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_20.mp3");
-                                break;
-                            case 30:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_30.mp3");
-                                break;
-                            case 50:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_50.mp3");
-                                break;
-                            case 69:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_69.mp3");
-                                break;
-                            case 70:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_70.mp3");
-                                break;
-                            case 71:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_71.mp3");
-                                break;
-                            case 85:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_85.mp3");
-                                break;
-                            case 90:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_90.mp3");
-                                break;
-                            case 99:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_99.mp3");
-                                break;
-                            case 100:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_100.mp3");
-                                break;
-                            case 101:
-                                AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_101.mp3");
-                                break;
-                        }
-                    }
-                }
-
-                if (Configuration.Instance.EnableDutyCompleteEvent)
-                {
-                    Task.Delay(1000).ContinueWith(_ =>
-                    {
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
-                    });
-                }
-                
+            case 0x6D when updateType == 0x40000002: // Alternate duty complete flag?
+            case 0x6D when updateType == 0x40000003: // Encounter Complete
+                if (_isInPvp) break;
+                PlayDutyCompleteAudio();
                 break;
             // Start PvP Countdown 
             case 0x6D when updateType == 0x40000004:
@@ -252,6 +192,7 @@ public class DutyEvent : IDisposable
                 break;
             // Possible PvP complete 
             case 0x6D when updateType == 0x40000007:
+                PluginLog.Verbose("0x40000007 fired");
                 break;
             // PvP win
             case 0x355 when updateType == 0x1F4:
@@ -281,6 +222,83 @@ public class DutyEvent : IDisposable
                 }
                 
                 break;
+        }
+    }
+
+    private void PlayDutyCompleteAudio()
+    {
+        if (!_dutyStarted && _dutyCompleted) return;
+        
+        _dutyStarted = false;
+        _dutyCompleted = true;
+
+        if (XivUtility.PlayerIsInHighEndDuty())
+        {
+            uint territory = DalamudService.ClientState.TerritoryType;
+            
+            if (!Configuration.Instance.CompletedHighEndDuties.ContainsKey(territory))
+            {
+                Configuration.Instance.CompletedHighEndDuties[territory] = 1;
+            }
+            else
+            {
+                Configuration.Instance.CompletedHighEndDuties[territory] += 1;
+            }
+            
+            Configuration.Instance.Save();
+            
+            PluginLog.Debug("Kills updated for {Territory}: {Kills}", territory, Configuration.Instance.CompletedHighEndDuties[territory]);
+
+            if (Configuration.Instance.EnableBossKillStreaks)
+            {
+                switch (Configuration.Instance.CompletedHighEndDuties[territory])
+                {
+                    case 15:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_15.mp3");
+                        break;
+                    case 20:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_20.mp3");
+                        break;
+                    case 30:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_30.mp3");
+                        break;
+                    case 50:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_50.mp3");
+                        break;
+                    case 69:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_69.mp3");
+                        break;
+                    case 70:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_70.mp3");
+                        break;
+                    case 71:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_71.mp3");
+                        break;
+                    case 85:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_85.mp3");
+                        break;
+                    case 90:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_90.mp3");
+                        break;
+                    case 99:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_99.mp3");
+                        break;
+                    case 100:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_100.mp3");
+                        break;
+                    case 101:
+                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_101.mp3");
+                        break;
+                }
+            }
+        }
+
+        if (Configuration.Instance.EnableDutyCompleteEvent)
+        {
+            Task.Delay(1000).ContinueWith(_ =>
+            {
+                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
+            });
         }
     }
 }
