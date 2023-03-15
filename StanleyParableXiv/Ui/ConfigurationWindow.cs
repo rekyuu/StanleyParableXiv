@@ -84,9 +84,29 @@ public class ConfigurationWindow : Window, IDisposable
                     }
                 }
 
-                if (ImGui.Button("Test"))
+                if (AssetsManager.IsUpdating)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
+                    ImGui.Text("\nVoice lines are currently downloading, please wait...\n\n");
+                }
+                else if (!AssetsManager.HasEnoughFreeDiskSpace)
+                {
+                    ImGui.Text("\nUnable to download voice lines!\n\n100MB of free disk space is required.\nPlease clear some space and try again.\n\n");
+
+                    if (ImGui.Button("Download voice lines"))
+                    {
+                        Plugin.UpdateVoiceLines();
+                    }
+                }
+                else
+                {
+                    if (ImGui.Button("Play random voice line"))
+                    {
+                        Random random = new();
+                        Array events = Enum.GetValues(typeof(AudioEvent));
+                        AudioEvent result = (AudioEvent)events.GetValue(random.Next(events.Length))!;
+                    
+                        AudioPlayer.Instance.PlayRandomSoundFromCategory(result);
+                    }
                 }
                 
                 ImGui.EndTabItem();

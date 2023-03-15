@@ -63,14 +63,7 @@ public sealed class Plugin : IDalamudPlugin
         _eventService = new EventService();
         
         // Update assets.
-        try
-        {
-            Task.Run(AssetsManager.UpdateVoiceLines);
-        }
-        catch (Exception ex)
-        {
-            PluginLog.Error(ex, "Exception occurred while updating assets");
-        }
+        UpdateVoiceLines();
 
         // Initialize Dalamud action hooks
         DalamudService.PluginInterface.UiBuilder.Draw += DrawUi;
@@ -99,6 +92,18 @@ public sealed class Plugin : IDalamudPlugin
         DalamudService.PluginInterface.UiBuilder.Draw -= DrawUi;
         DalamudService.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
+    }
+
+    public static void UpdateVoiceLines()
+    {
+        try
+        {
+            Task.Run(AssetsManager.UpdateVoiceLines);
+        }
+        catch (Exception ex)
+        {
+            PluginLog.Error(ex, "Exception occurred while updating assets");
+        }
     }
 
     private void DrawUi() => _windowSystem.Draw();

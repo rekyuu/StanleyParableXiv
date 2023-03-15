@@ -10,7 +10,12 @@ namespace StanleyParableXiv;
 
 public static class AssetsManager
 {
+    public static bool IsUpdating { get; private set; } = false;
+
+    public static bool HasEnoughFreeDiskSpace { get; private set; } = true;
+    
     private const string? RequiredAssetsVersion = "1.2.2.0";
+    private const long RequiredDiskSpaceBytes = 100_000_000; // Expanded bytes
 
     /// <summary>
     /// Checks if the assets exist, are the current version, and downloads them if necessary.
@@ -40,13 +45,27 @@ public static class AssetsManager
         }
         else updateNeeded = true;
 
-        if (!updateNeeded) return;
-        
+        if (!updateNeeded)
+        {
+            PluginLog.Information("Assets validated, nothing to do");
+            return;
+        }
+
+        IsUpdating = true;
         PluginLog.Information("Downloading assets");
 
         // Download assets
         string downloadLocation = $"{configDir}/assets-{RequiredAssetsVersion}.zip";
         Uri assetUri = new($"https://github.com/rekyuu/StanleyParableXiv/releases/download/{RequiredAssetsVersion}/assets.zip");
+
+        HasEnoughFreeDiskSpace = true;
+        long freeDiskSpace = new DriveInfo(downloadLocation).AvailableFreeSpace;
+        if (freeDiskSpace < RequiredDiskSpaceBytes)
+        {
+            HasEnoughFreeDiskSpace = false;
+            IsUpdating = false;
+            return;
+        }
         
         if (File.Exists(downloadLocation)) File.Delete(downloadLocation);
         
@@ -70,6 +89,7 @@ public static class AssetsManager
         File.Delete(downloadLocation);
         
         PluginLog.Debug("Asset extraction complete");
+        IsUpdating = false;
         
         // Validate the downloaded assets
         if (File.Exists(manifestFile))
