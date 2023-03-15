@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using Dalamud.Game;
+using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Logging;
 using StanleyParableXiv.Services;
@@ -13,6 +15,7 @@ public class AfkEvent : IDisposable
     private readonly Hook<AfkTimerHookDelegate>? _afkTimerHook;
     private TimerService? _afkTimerService;
     private bool _afkPlayed = false;
+    private bool _isInCutscene = false;
     
     /// <summary>
     /// Fires an event when a player is AFK for a certain time.
@@ -20,6 +23,8 @@ public class AfkEvent : IDisposable
     /// </summary>
     public AfkEvent()
     {
+        DalamudService.Framework.Update += OnFrameworkUpdate;
+        
         _afkTimerHook = Hook<AfkTimerHookDelegate>.FromAddress(
             DalamudService.SigScanner.ScanText("48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55"),
             OnAfkTimerHook);
@@ -28,9 +33,16 @@ public class AfkEvent : IDisposable
     
     public void Dispose()
     {
+        DalamudService.Framework.Update -= OnFrameworkUpdate;
+        
         DisposeAfkTimerHook();
         _afkTimerService?.Stop();
         _afkTimerService?.Dispose();
+    }
+
+    private void OnFrameworkUpdate(Framework framework)
+    {
+        _isInCutscene = DalamudService.Condition[ConditionFlag.OccupiedInCutSceneEvent];
     }
 
     private unsafe long OnAfkTimerHook(IntPtr a1, float a2)
@@ -47,10 +59,11 @@ public class AfkEvent : IDisposable
             
             PluginLog.Verbose($"AFK Timers = {*afkTimer1}/{*afkTimer2}/{*afkTimer3}");
                 
-            // Not really sure what each timer is for, so we'll just pick the longest
+            // Not really sure what each timer is for, so we'll just pick the longest.
+            // Skip playing if they're in a cutscene.
             if (new[] { *afkTimer1, *afkTimer2, *afkTimer3 }.Max() > Configuration.Instance.AfkEventTimeframe)
             {
-                if (Configuration.Instance.EnableAfkEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
+                if (Configuration.Instance.EnableAfkEvent && !_isInCutscene) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
                 _afkPlayed = true;
             }
             else _afkPlayed = false;
