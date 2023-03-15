@@ -4,6 +4,7 @@ using Dalamud.Game.ClientState;
 using Dalamud.Game.ClientState.Objects;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Command;
+using Dalamud.Game.DutyState;
 using Dalamud.Game.Gui;
 using Dalamud.Game.Network;
 using Dalamud.IoC;
@@ -59,4 +60,8 @@ public class DalamudService
     [PluginService]
     [RequiredVersion("1.0")]
     public static ObjectTable ObjectTable { get; private set; } = null!;
+    
+    [PluginService]
+    [RequiredVersion("1.0")]
+    public static DutyState DutyState { get; private set; } = null!;
 }

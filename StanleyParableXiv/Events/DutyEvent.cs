@@ -19,11 +19,28 @@ public class DutyEvent : IDisposable
     private TerritoryType? _currentTerritory;
     private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
-    private bool _isInQuestBattle = false;
-    private bool _isInCompanyWorkshop = false;
+    private bool _isInIgnoredTerritory = false;
+    private bool _isInAllowedContentType = false;
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
+
+    private readonly uint?[] _territoriesToIgnore = 
+    {
+        653, // Company Workshop
+    };
+
+    private readonly uint?[] _allowedContentTypes = 
+    {
+        1,  // Duty Roulette
+        2,  // Dungeons
+        3,  // Guildhests
+        4,  // Trials
+        5,  // Raids
+        21, // Deep Dungeons
+        28, // Ultimate Raids
+        30  // V&C Dungeon Finder
+    };
     
     /// <summary>
     /// Fires various duty instance events.
@@ -31,18 +48,52 @@ public class DutyEvent : IDisposable
     /// </summary>
     public DutyEvent()
     {
+        DalamudService.DutyState.DutyStarted += OnDutyStarted;
+        DalamudService.DutyState.DutyWiped += OnDutyWiped;
+        DalamudService.DutyState.DutyCompleted += OnDutyCompleted;
         DalamudService.ClientState.EnterPvP += OnEnterPvP;
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.Framework.Update += OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
     }
-    
+
     public void Dispose()
     {
+        DalamudService.DutyState.DutyStarted -= OnDutyStarted;
+        DalamudService.DutyState.DutyWiped -= OnDutyWiped;
+        DalamudService.DutyState.DutyCompleted -= OnDutyCompleted;
         DalamudService.ClientState.EnterPvP -= OnEnterPvP;
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+    }
+
+    private void OnDutyStarted(object? sender, ushort e)
+    {
+        if (!_isInAllowedContentType || _isInIgnoredTerritory) return;
+                
+        _dutyStarted = true;
+        _dutyCompleted = false;
+
+        if (!Configuration.Instance.EnableDutyStartEvent) return;
+        
+        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
+    }
+
+    private void OnDutyWiped(object? sender, ushort e)
+    {
+        if (!Configuration.Instance.EnableDutyPartyWipeEvent) return;
+        
+        Task.Delay(1000).ContinueWith(_ =>
+        {
+            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
+        });
+    }
+
+    private void OnDutyCompleted(object? sender, ushort e)
+    {
+        if (_isInPvp) return;
+        PlayDutyCompleteAudio();
     }
 
     private void OnEnterPvP() => _isInPvp = true;
@@ -65,24 +116,6 @@ public class DutyEvent : IDisposable
 
         switch (cat)
         {
-            // Encounter Start
-            case 0x6D when updateType == 0x40000001:
-                if (_isInQuestBattle || _isInCompanyWorkshop) break;
-                
-                _dutyStarted = true;
-                _dutyCompleted = false;
-
-                if (Configuration.Instance.EnableDutyStartEvent)
-                {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
-                }
-                
-                break;
-            case 0x6D when updateType == 0x40000002: // Alternate duty complete flag?
-            case 0x6D when updateType == 0x40000003: // Encounter Complete
-                if (_isInPvp) break;
-                PlayDutyCompleteAudio();
-                break;
             // Start PvP Countdown 
             case 0x6D when updateType == 0x40000004:
                 _dutyStarted = true;
@@ -101,24 +134,6 @@ public class DutyEvent : IDisposable
                     });
                 }
                 
-                break;
-            // Party Wipe
-            case 0x6D when updateType == 0x40000005:
-                if (Configuration.Instance.EnableDutyPartyWipeEvent)
-                {
-                    Task.Delay(1000).ContinueWith(_ =>
-                    {
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
-                    });
-                }
-                
-                break;
-            // Encounter Recommence
-            case 0x6D when updateType == 0x40000006:
-                break;
-            // Possible PvP complete 
-            case 0x6D when updateType == 0x40000007:
-                PluginLog.Verbose("0x40000007 fired");
                 break;
             // PvP win
             case 0x355 when updateType == 0x1F4:
@@ -150,37 +165,32 @@ public class DutyEvent : IDisposable
                 break;
         }
     }
-
-    private bool PlayerIsInQuestBattle()
-    {
-        return _currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId == 7;
-    }
         
     private void CheckIfPlayerIsBoundByDuty()
     {
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty95];
-        bool isNextInQuestBattle = PlayerIsInQuestBattle();
         
         // Ignore Island Sanctuary
         _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
-        _isInCompanyWorkshop = _currentTerritory?.RowId == 653;
-
+        _isInIgnoredTerritory = _territoriesToIgnore.Contains(_currentTerritory?.RowId);
+        bool isNextInAllowedContentType = _allowedContentTypes.Contains(_currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId);
+        
         // Consider duty failed if it wasn't completed before leaving duty
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInQuestBattle && !_isInCompanyWorkshop && Configuration.Instance.EnableDutyFailedEvent)
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInIgnoredTerritory && _isInAllowedContentType && Configuration.Instance.EnableDutyFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
 
         _isBoundByDuty = isNextBoundByDuty;
-        _isInQuestBattle = isNextInQuestBattle;
+        _isInAllowedContentType = isNextInAllowedContentType;
     }
 
     private void CheckPartyMembers()
     {
-        if (!_isBoundByDuty || _isInCompanyWorkshop) return;
+        if (!_isBoundByDuty || _isInIgnoredTerritory) return;
         if (DalamudService.PartyList.Length == 0) return;
         if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
 
