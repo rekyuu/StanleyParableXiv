@@ -51,8 +51,6 @@ public class AfkEvent : IDisposable
         
         _afkTimerService = new TimerService(30, () =>
         {
-            if (_afkPlayed) return;
-            
             float* afkTimer1 = (float*)(_afkTimerBaseAddress + 20);
             float* afkTimer2 = (float*)(_afkTimerBaseAddress + 24);
             float* afkTimer3 = (float*)(_afkTimerBaseAddress + 28);
@@ -63,7 +61,7 @@ public class AfkEvent : IDisposable
             // Skip playing if they're in a cutscene.
             if (new[] { *afkTimer1, *afkTimer2, *afkTimer3 }.Max() > Configuration.Instance.AfkEventTimeframe)
             {
-                if (Configuration.Instance.EnableAfkEvent && !_isInCutscene) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
+                if (Configuration.Instance.EnableAfkEvent && !_isInCutscene && !_afkPlayed) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
                 _afkPlayed = true;
             }
             else _afkPlayed = false;
