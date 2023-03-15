@@ -96,8 +96,8 @@ public class PvpEvent : IDisposable
         bool isDead = DalamudService.ClientState.LocalPlayer!.IsDead;
         bool chat = Configuration.Instance.EnablePvpChatEvent;
 
-        string killerName;
-        string killedName;
+        string killerName = "";
+        string killedName = "";
         
         switch (type)
         {
@@ -125,7 +125,7 @@ public class PvpEvent : IDisposable
                         killedName = player2Name;
                     }
                 }
-                else
+                else if (_partyMembers.ContainsKey(player2Name))
                 {
                     if (_partyMembers[player2Name].IsDead)
                     {
@@ -162,6 +162,8 @@ public class PvpEvent : IDisposable
             default:
                 return;
         }
+        
+        if (string.IsNullOrEmpty(killerName) || string.IsNullOrEmpty(killedName)) return;
 
         PluginLog.Verbose("{KillerName} -> {KilledName}", killerName, killedName);
 
