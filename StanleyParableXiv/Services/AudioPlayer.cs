@@ -5,7 +5,6 @@ using System.Linq;
 using Dalamud.Logging;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
-using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
 
 namespace StanleyParableXiv.Services;
@@ -552,7 +551,7 @@ public class AudioPlayer : IDisposable
     /// <summary>
     /// Plays a sound from the supplied path in the Resources directory.
     /// </summary>
-    /// <param name="resourcePath">The path of the file to paly.</param>
+    /// <param name="resourcePath">The path of the file to play.</param>
     public void PlaySound(string resourcePath)
     {
         if (_isPlaying) return;
