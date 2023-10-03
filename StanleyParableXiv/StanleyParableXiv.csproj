@@ -36,8 +36,8 @@
    </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="2.1.10" />
-    <PackageReference Include="NAudio" Version="2.1.0" />
+    <PackageReference Include="DalamudPackager" Version="2.1.12" />
+    <PackageReference Include="NAudio" Version="2.2.1" />
     <Reference Include="FFXIVClientStructs">
       <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
       <Private>false</Private>
