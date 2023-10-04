@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.Network;
-using Dalamud.Logging;
 using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 

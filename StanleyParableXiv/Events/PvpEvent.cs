@@ -7,7 +7,6 @@ using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
-using Dalamud.Logging;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
 

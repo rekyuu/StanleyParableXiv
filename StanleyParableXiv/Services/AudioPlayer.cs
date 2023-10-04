@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Dalamud.Logging;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using StanleyParableXiv.Utility;
@@ -566,9 +565,16 @@ public class AudioPlayer : IDisposable
             return;
         }
 
-        using AudioFileReader audioFile = new(audioPath);
-        _mixer.AddMixerInput(ConvertToCorrectChannelCount(audioFile));
-        _isPlaying = true;
+        try
+        {
+            using AudioFileReader audioFile = new(audioPath);
+            _mixer.AddMixerInput(ConvertToCorrectChannelCount(audioFile));
+            _isPlaying = true;
+        }
+        catch (Exception e)
+        {
+            DalamudService.Log.Error(e, "An exception was thrown while attempting to play audio file");
+        }
     }
 
     private ISampleProvider ConvertToCorrectChannelCount(ISampleProvider input)

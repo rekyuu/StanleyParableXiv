@@ -2,7 +2,6 @@
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using Dalamud.Logging;
 using Newtonsoft.Json;
 using StanleyParableXiv.Services;
 

@@ -2,17 +2,20 @@ using System;
 using System.Linq;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
 
 public class AfkEvent : IDisposable
 {
-    private const string AfkTimerSig = "48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55";
+    private delegate long AfkTimerHookDelegate(nint a1, float a2);
+
+    [Signature("48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55", DetourName = nameof(OnAfkTimerHook))]
+    private readonly Hook<AfkTimerHookDelegate>? _afkTimerHook = null;
+    
     private IntPtr _afkTimerBaseAddress = IntPtr.Zero;
-    private readonly Hook<Func<IntPtr, float, long>> _afkTimerHook;
     private TimerService? _afkTimerService;
     private bool _afkPlayed = false;
     private bool _isInCutscene = false;
@@ -23,19 +26,17 @@ public class AfkEvent : IDisposable
     /// </summary>
     public AfkEvent()
     {
-        DalamudService.Framework.Update += OnFrameworkUpdate;
+        DalamudService.GameInteropProvider.InitializeFromAttributes(this);
+        _afkTimerHook?.Enable();
         
-        _afkTimerHook = DalamudService.GameInteropProvider.HookFromSignature(
-            AfkTimerSig,
-            OnAfkTimerHook);
-        _afkTimerHook.Enable();
+        DalamudService.Framework.Update += OnFrameworkUpdate;
     }
     
     public void Dispose()
     {
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         
-        DisposeAfkTimerHook();
+        _afkTimerHook?.Dispose();
         _afkTimerService?.Stop();
         _afkTimerService?.Dispose();
         
@@ -47,7 +48,7 @@ public class AfkEvent : IDisposable
         _isInCutscene = DalamudService.Condition[ConditionFlag.OccupiedInCutSceneEvent];
     }
 
-    private unsafe long OnAfkTimerHook(IntPtr a1, float a2)
+    private unsafe long OnAfkTimerHook(nint a1, float a2)
     {
         _afkTimerBaseAddress = a1;
         
@@ -70,22 +71,8 @@ public class AfkEvent : IDisposable
         });
             
         _afkTimerService.Start();
-        DisposeAfkTimerHook();
+        _afkTimerHook?.Dispose();
 
         return 0;
-    }
-
-    private void DisposeAfkTimerHook()
-    {
-        switch (_afkTimerHook)
-        {
-            case { IsDisposed: true }:
-                return;
-            case { IsEnabled: true }:
-                _afkTimerHook.Disable();
-                break;
-        }
-
-        _afkTimerHook?.Dispose();
     }
 }

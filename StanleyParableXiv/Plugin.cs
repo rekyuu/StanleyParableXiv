@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
 using Dalamud.Interface.Windowing;
-using Dalamud.Logging;
 using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Ui;

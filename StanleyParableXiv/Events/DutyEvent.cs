@@ -2,13 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
-using Dalamud.Game.Network;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 using StanleyParableXiv.Services;
@@ -19,6 +16,7 @@ namespace StanleyParableXiv.Events;
 public class DutyEvent : IDisposable
 {
     private const string ActorControlSelfSig = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 48 8B D9 49 8B F8 41 0F B7 08";
+    private readonly Hook<Action<uint, uint, uint, uint, uint, uint, uint, uint, ulong, byte>> _actorControlSelfHook;
     
     private TerritoryType? _currentTerritory;
     private bool _isInPvp = false;
@@ -28,8 +26,6 @@ public class DutyEvent : IDisposable
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
-
-    private readonly Hook<Action<uint, uint, uint, uint, uint, uint, uint, uint, ulong, byte>> _actorControlSelfHook;
 
     private readonly uint?[] _territoriesToIgnore = 
     {
@@ -76,16 +72,7 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         
-        switch (_actorControlSelfHook)
-        {
-            case { IsDisposed: true }:
-                return;
-            case { IsEnabled: true }:
-                _actorControlSelfHook.Disable();
-                break;
-        }
-
-        _actorControlSelfHook?.Dispose();
+        _actorControlSelfHook.Dispose();
         
         GC.SuppressFinalize(this);
     }
@@ -228,7 +215,7 @@ public class DutyEvent : IDisposable
             if (_currentTerritory != partyMember.Territory.GameData) continue;
             
             uint objId = partyMember.ObjectId;
-            if (!_partyStatus.ContainsKey(objId)) _partyStatus[objId] = null;
+            _partyStatus.TryAdd(objId, null);
             
             uint? nextStatus = null;
             uint? lastStatus = _partyStatus[objId];
