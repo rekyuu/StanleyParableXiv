@@ -7,7 +7,7 @@ namespace StanleyParableXiv.Events;
 
 public class MarketBoardPurchaseEvent : IDisposable
 {
-    private unsafe delegate long OnMarketBoardPurchaseDelegate(nint a1, uint* a2);
+    private unsafe delegate void OnMarketBoardPurchaseDelegate(nint a1, uint* a2);
 
     [Signature("40 55 53 57 48 8B EC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 48 8B 0D", 
         DetourName = nameof(OnMarketBoardPurchase))]

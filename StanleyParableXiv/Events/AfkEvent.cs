@@ -12,11 +12,11 @@ public class AfkEvent : IDisposable
 {
     private delegate long AfkTimerHookDelegate(nint a1, float a2);
 
-    [Signature("48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55", DetourName = nameof(OnAfkTimerHook))]
+    [Signature("E8 ?? ?? ?? ?? 48 8B 8B 10 0E 01 00 48 8B 01 FF 90 88 02 00 00", DetourName = nameof(OnAfkTimer))]
     private readonly Hook<AfkTimerHookDelegate>? _afkTimerHook = null;
+    private TimerService? _afkTimerService;
     
     private IntPtr _afkTimerBaseAddress = IntPtr.Zero;
-    private TimerService? _afkTimerService;
     private bool _afkPlayed = false;
     private bool _isInCutscene = false;
     
@@ -48,7 +48,7 @@ public class AfkEvent : IDisposable
         _isInCutscene = DalamudService.Condition[ConditionFlag.OccupiedInCutSceneEvent];
     }
 
-    private unsafe long OnAfkTimerHook(nint a1, float a2)
+    private unsafe long OnAfkTimer(nint a1, float a2)
     {
         _afkTimerBaseAddress = a1;
         
