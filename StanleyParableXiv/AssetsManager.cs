@@ -16,7 +16,7 @@ public static class AssetsManager
 
     public static string? CurrentAssetsVersion { get; private set; }
     
-    public const string RequiredAssetsVersion = "1.2.2.0";
+    public const string RequiredAssetsVersion = "2.0.0.0";
     private const long RequiredDiskSpaceBytes = 100_000_000; // Expanded bytes
 
     /// <summary>
