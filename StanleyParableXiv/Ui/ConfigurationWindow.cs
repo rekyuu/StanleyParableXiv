@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Threading.Tasks;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
@@ -22,7 +23,7 @@ public class ConfigurationWindow : Window, IDisposable
     {
         if (ImGui.BeginTabBar("##StanleyParableConfigurationTabBar", ImGuiTabBarFlags.None))
         {
-            if (ImGui.BeginTabItem("Volume Settings"))
+            if (ImGui.BeginTabItem("Volume"))
             {
                 int bindToXivVolumeSourceState = Configuration.Instance.BindToXivVolumeSource ? 1 : 0;
                 string[] bindToXivVolumeSourceOptions =
@@ -112,7 +113,7 @@ public class ConfigurationWindow : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Event Settings"))
+            if (ImGui.BeginTabItem("Events"))
             {
                 ImGui.PushID("General");
                 if (ImGui.CollapsingHeader("General"))
@@ -318,14 +319,52 @@ public class ConfigurationWindow : Window, IDisposable
                 ImGui.EndTabItem();
             }
 
-            if (ImGui.BeginTabItem("Debug Settings"))
+            if (ImGui.BeginTabItem("Assets"))
             {
+                ImGui.PushID("Assets");
+
+                ImGui.Text($"Required assets version: {AssetsManager.RequiredAssetsVersion}");
+                ImGui.Text($"Current assets version: {AssetsManager.CurrentAssetsVersion}");
+                
+                if (AssetsManager.IsUpdating)
+                {
+                    ImGui.Text("\nVoice lines are currently downloading, please wait...\n\n");
+                }
+                else if (!AssetsManager.HasEnoughFreeDiskSpace)
+                {
+                    ImGui.Text("\nUnable to download voice lines!\n\n100MB of free disk space is required.\nPlease clear some space and try again.\n\n");
+
+                    if (ImGui.Button("Download voice lines"))
+                    {
+                        Plugin.UpdateVoiceLines();
+                    }
+                }
+                else
+                {
+                    ImGui.Text("\n");
+                    if (ImGui.Button("Re-download assets"))
+                    {
+                        Task.Run(() => AssetsManager.UpdateVoiceLines(true));
+                    }
+                }
+                
+                ImGui.PopID();
+
+                ImGui.EndTabItem();
+            }
+
+            if (ImGui.BeginTabItem("Debug"))
+            {
+                ImGui.PushID("Debug");
                 bool enableDebugLogging = Configuration.Instance.EnableDebugLogging;
                 if (ImGui.Checkbox("Enable debug logging", ref enableDebugLogging))
                 {
-                    Configuration.Instance.EnableCountdownStartEvent = enableDebugLogging;
+                    Configuration.Instance.EnableDebugLogging = enableDebugLogging;
                     Configuration.Instance.Save();
                 }
+                ImGui.PopID();
+
+                ImGui.EndTabItem();
             }
         }
         

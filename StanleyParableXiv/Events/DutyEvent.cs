@@ -7,6 +7,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Hooking;
 using Dalamud.Plugin.Services;
+using Dalamud.Utility.Signatures;
 using Lumina.Excel.GeneratedSheets;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
@@ -15,8 +16,12 @@ namespace StanleyParableXiv.Events;
 
 public class DutyEvent : IDisposable
 {
-    private const string ActorControlSelfSig = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 48 8B D9 49 8B F8 41 0F B7 08";
-    private readonly Hook<Action<uint, uint, uint, uint, uint, uint, uint, uint, ulong, byte>> _actorControlSelfHook;
+    private delegate long ActorControlSelfDelegate(uint a1, uint a2, uint a3, uint a4, uint a5, uint a6, uint a7, 
+        uint a8, ulong a9, byte a10);
+
+    [Signature("48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 48 8B D9 49 8B F8 41 0F B7 08", 
+        DetourName = nameof(OnActorControlSelf))]
+    private readonly Hook<ActorControlSelfDelegate>? _actorControlSelfHook = null;
     
     private TerritoryType? _currentTerritory;
     private bool _isInPvp = false;
@@ -57,10 +62,8 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.Framework.Update += OnFrameworkUpdate;
         
-        _actorControlSelfHook = DalamudService.GameInteropProvider.HookFromSignature(
-            ActorControlSelfSig,
-            OnActorControlSelf);
-        _actorControlSelfHook.Enable();
+        DalamudService.GameInteropProvider.InitializeFromAttributes(this);
+        _actorControlSelfHook?.Enable();
     }
 
     public void Dispose()
@@ -72,7 +75,7 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         
-        _actorControlSelfHook.Dispose();
+        _actorControlSelfHook?.Dispose();
         
         GC.SuppressFinalize(this);
     }
@@ -118,7 +121,7 @@ public class DutyEvent : IDisposable
     private void OnActorControlSelf(uint category, uint cat, uint a3, uint updateType, uint a5, uint a6, uint a7, 
         uint a8, ulong targetId, byte a10)
     {
-        _actorControlSelfHook.Original(category, cat, a3, updateType, a5, a6, a7, a8, targetId, a10);
+        _actorControlSelfHook?.Original(category, cat, a3, updateType, a5, a6, a7, a8, targetId, a10);
 
         switch (cat)
         {

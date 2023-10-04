@@ -25,10 +25,10 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin(DalamudPluginInterface pluginInterface)
     {
-        DalamudService.Log.Information("Starting plugin");
-        
         // Initialize Dalamud services.
         DalamudService.Initialize(pluginInterface);
+        
+        DalamudService.Log.Information("Starting plugin");
 
         // Initialize the plugin commands.
         DalamudService.CommandManager.AddHandler("/narrator", new CommandInfo(OnConfigCommand)
@@ -94,7 +94,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         try
         {
-            Task.Run(AssetsManager.UpdateVoiceLines);
+            Task.Run(() => AssetsManager.UpdateVoiceLines());
         }
         catch (Exception ex)
         {
