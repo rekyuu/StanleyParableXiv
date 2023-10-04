@@ -5,9 +5,6 @@ using Dalamud.Plugin;
 using Dalamud.Game;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
-using Lumina.Data;
-using Lumina.Excel.GeneratedSheets;
-using Newtonsoft.Json;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Ui;
 using StanleyParableXiv.Utility;
@@ -112,7 +109,7 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnConfigCommand(string command, string commandArgs) => OnOpenConfigUi();
 
-    private void OnVolumeCommand(string command, string commandArgs)
+    private static void OnVolumeCommand(string command, string commandArgs)
     {
         try
         {
@@ -120,7 +117,7 @@ public sealed class Plugin : IDalamudPlugin
             string[] args = commandArgs.Split(" ");
                 
             if (args.Length >= 1 && !string.IsNullOrEmpty(args[0])) volumeSetting = uint.Parse(args[0]);
-            if (volumeSetting is < 0 or > 100) throw new Exception("Volume must be between 0 and 100");
+            if (volumeSetting > 100) throw new Exception("Volume must be between 0 and 100");
                 
             Configuration.Instance.Volume = volumeSetting;
             Configuration.Instance.BindToXivVolumeSource = false;
@@ -137,12 +134,12 @@ public sealed class Plugin : IDalamudPlugin
         }
     }
 
-    private void OnTestCommand(string command, string commandArgs)
+    private static void OnTestCommand(string command, string commandArgs)
     {
         
     }
 
-    private void OnConfigReload(string command, string arguments) => Configuration.Reload();
+    private static void OnConfigReload(string command, string arguments) => Configuration.Reload();
 
     private void OnFrameworkUpdate(Framework framework)
     {

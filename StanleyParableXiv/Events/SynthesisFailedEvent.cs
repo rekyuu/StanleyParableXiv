@@ -25,6 +25,7 @@ public class SynthesisFailedEvent : IDisposable
     public void Dispose()
     {
         DalamudService.ChatGui.ChatMessage -= OnChatMessage;
+        GC.SuppressFinalize(this);
     }
 
     private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)

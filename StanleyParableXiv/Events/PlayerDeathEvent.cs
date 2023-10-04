@@ -21,6 +21,7 @@ public class PlayerDeathEvent : IDisposable
     public void Dispose()
     {
         DalamudService.Framework.Update -= OnFrameworkUpdate;
+        GC.SuppressFinalize(this);
     }
     
     private void OnFrameworkUpdate(Framework framework)

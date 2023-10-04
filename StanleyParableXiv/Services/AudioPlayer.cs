@@ -468,6 +468,7 @@ public class AudioPlayer : IDisposable
     public void Dispose()
     {
         _outputDevice.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

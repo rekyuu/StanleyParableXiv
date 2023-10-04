@@ -24,6 +24,7 @@ public class TimerService : IDisposable
     public void Dispose()
     {
         _timer?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>

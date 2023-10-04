@@ -8,9 +8,9 @@ using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
 
-public class DebugEvent
+public class DebugEvent : IDisposable
 {
-    private Dictionary<ConditionFlag, bool> _conditions = new();
+    private readonly Dictionary<ConditionFlag, bool> _conditions = new();
     
     /// <summary>
     /// Fires on login events.
@@ -25,16 +25,20 @@ public class DebugEvent
     {
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        
+        GC.SuppressFinalize(this);
     }
 
     private void OnFrameworkUpdate(Framework framework)
     {
+        if (!Configuration.Instance.EnableDebugLogging) return;
         LogConditionFlagChanges();
     }
 
-    private unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
+    private static unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
         NetworkMessageDirection direction)
     {
+        if (!Configuration.Instance.EnableDebugLogging) return;
         if (opCode != DalamudService.DataManager.ServerOpCodes["ActorControlSelf"]) return;
         
         ushort cat = *(ushort*)(dataPtr + 0x00);

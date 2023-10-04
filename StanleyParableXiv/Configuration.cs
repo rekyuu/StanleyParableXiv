@@ -154,6 +154,11 @@ public class Configuration : IPluginConfiguration
     public bool EnableBossKillStreaks { get; set; } = true;
 
     /// <summary>
+    /// Enables debug logging to the Dalamud log window.
+    /// </summary>
+    public bool EnableDebugLogging { get; set; } = false;
+
+    /// <summary>
     /// Counts of the user's completed high end duties.
     /// </summary>
     public Dictionary<uint, uint> CompletedHighEndDuties { get; set; } = new();

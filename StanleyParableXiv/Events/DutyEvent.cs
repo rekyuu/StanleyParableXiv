@@ -66,6 +66,8 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        
+        GC.SuppressFinalize(this);
     }
 
     private void OnDutyStarted(object? sender, ushort e)

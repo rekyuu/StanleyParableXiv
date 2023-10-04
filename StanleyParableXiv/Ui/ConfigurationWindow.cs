@@ -317,6 +317,16 @@ public class ConfigurationWindow : Window, IDisposable
 
                 ImGui.EndTabItem();
             }
+
+            if (ImGui.BeginTabItem("Debug Settings"))
+            {
+                bool enableDebugLogging = Configuration.Instance.EnableDebugLogging;
+                if (ImGui.Checkbox("Enable debug logging", ref enableDebugLogging))
+                {
+                    Configuration.Instance.EnableCountdownStartEvent = enableDebugLogging;
+                    Configuration.Instance.Save();
+                }
+            }
         }
         
         ImGui.EndTabBar();

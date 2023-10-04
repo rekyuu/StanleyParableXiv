@@ -41,6 +41,8 @@ public class PvpEvent : IDisposable
         DalamudService.ClientState.EnterPvP -= OnEnterPvP;
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.ChatGui.ChatMessage -= OnChatMessage;
+        
+        GC.SuppressFinalize(this);
     }
 
     private void ResetKillCounts()

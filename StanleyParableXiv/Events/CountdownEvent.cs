@@ -37,6 +37,8 @@ public class CountdownEvent : IDisposable
         }
 
         _countdownTimerHook?.Dispose();
+        
+        GC.SuppressFinalize(this);
     }
 
     private nint OnCountdownTimerHook(ulong value)

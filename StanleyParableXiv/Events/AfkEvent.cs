@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
@@ -38,6 +39,8 @@ public class AfkEvent : IDisposable
         DisposeAfkTimerHook();
         _afkTimerService?.Stop();
         _afkTimerService?.Dispose();
+        
+        GC.SuppressFinalize(this);
     }
 
     private void OnFrameworkUpdate(Framework framework)

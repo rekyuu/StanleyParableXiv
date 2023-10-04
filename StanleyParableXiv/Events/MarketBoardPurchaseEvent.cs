@@ -20,6 +20,7 @@ public class MarketBoardPurchaseEvent : IDisposable
     public void Dispose()
     {
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        GC.SuppressFinalize(this);
     }
 
     private void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,

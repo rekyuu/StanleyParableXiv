@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Logging;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
@@ -27,6 +25,8 @@ public class LoginEvent : IDisposable
         DalamudService.ClientState.Login -= OnLogin;
         DalamudService.ClientState.Logout -= OnLogout;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
+        
+        GC.SuppressFinalize(this);
     }
 
     private void OnFrameworkUpdate(Framework framework)

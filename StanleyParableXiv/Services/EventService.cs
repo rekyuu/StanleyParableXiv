@@ -5,36 +5,21 @@ namespace StanleyParableXiv.Services;
 
 public class EventService : IDisposable
 {
-    private readonly AfkEvent _afkEvent;
-    private readonly CountdownEvent _countdownEvent;
-    private readonly DebugEvent _debugEvent;
-    private readonly DutyEvent _dutyEvent;
-    private readonly LoginEvent _loginEvent;
-    private readonly MarketBoardPurchaseEvent _marketBoardPurchaseEvent;
-    private readonly PlayerDeathEvent _playerDeathEvent;
-    private readonly PvpEvent _pvpEvent;
-    private readonly SynthesisFailedEvent _synthesisFailedEvent;
-    
-    public EventService()
-    {
-        _afkEvent = new AfkEvent();
-        _countdownEvent = new CountdownEvent();
-        _dutyEvent = new DutyEvent();
-        _loginEvent = new LoginEvent();
-        _marketBoardPurchaseEvent = new MarketBoardPurchaseEvent();
-        _playerDeathEvent = new PlayerDeathEvent();
-        _pvpEvent = new PvpEvent();
-        _synthesisFailedEvent = new SynthesisFailedEvent();
-        
-        #if DEBUG
-        _debugEvent = new DebugEvent();
-        #endif
-    }
-    
+    private readonly AfkEvent _afkEvent = new();
+    private readonly CountdownEvent _countdownEvent = new();
+    private readonly DebugEvent _debugEvent = new();
+    private readonly DutyEvent _dutyEvent = new();
+    private readonly LoginEvent _loginEvent = new();
+    private readonly MarketBoardPurchaseEvent _marketBoardPurchaseEvent = new();
+    private readonly PlayerDeathEvent _playerDeathEvent = new();
+    private readonly PvpEvent _pvpEvent = new();
+    private readonly SynthesisFailedEvent _synthesisFailedEvent = new();
+
     public void Dispose()
     {
         _afkEvent.Dispose();
         _countdownEvent.Dispose();
+        _debugEvent.Dispose();
         _dutyEvent.Dispose();
         _loginEvent.Dispose();
         _marketBoardPurchaseEvent.Dispose();
@@ -42,8 +27,6 @@ public class EventService : IDisposable
         _pvpEvent.Dispose();
         _synthesisFailedEvent.Dispose();
         
-        #if DEBUG
-        _debugEvent.Dispose();
-        #endif
+        GC.SuppressFinalize(this);
     }
 }
