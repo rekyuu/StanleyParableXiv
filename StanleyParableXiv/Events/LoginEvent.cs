@@ -1,6 +1,6 @@
 using System;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
+using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
@@ -29,7 +29,7 @@ public class LoginEvent : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void OnFrameworkUpdate(Framework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
         if (!_loginReady || _hasLoggedIn) return;
         
@@ -41,12 +41,12 @@ public class LoginEvent : IDisposable
         _hasLoggedIn = true;
     }
 
-    private void OnLogin(object? sender, EventArgs eventArgs)
+    private void OnLogin()
     {
         _loginReady = true;
     }
 
-    private void OnLogout(object? sender, EventArgs e)
+    private void OnLogout()
     {
         _loginReady = false;
         _hasLoggedIn = false;

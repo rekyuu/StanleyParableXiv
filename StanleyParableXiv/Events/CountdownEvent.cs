@@ -1,15 +1,15 @@
 using System;
 using System.Runtime.InteropServices;
 using Dalamud.Hooking;
-using Dalamud.Logging;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
 
 public class CountdownEvent : IDisposable
 {
-    private delegate IntPtr CountdownTimerHookDelegate(ulong p1);
-    private readonly Hook<CountdownTimerHookDelegate>? _countdownTimerHook;
+    private const string CountdownTimerSig = "48 89 5C 24 ?? 57 48 83 EC ?? 8B 41 ?? 48 8B D9 89 41";
+    
+    private readonly Hook<Action<ulong>> _countdownTimerHook;
     private bool _countdownStartPlayed = false;
     private bool _countdown10Played = false;
     
@@ -19,8 +19,8 @@ public class CountdownEvent : IDisposable
     /// </summary>
     public CountdownEvent()
     {
-        _countdownTimerHook = Hook<CountdownTimerHookDelegate>.FromAddress(
-            DalamudService.SigScanner.ScanText("48 89 5C 24 ?? 57 48 83 EC 40 8B 41"),
+        _countdownTimerHook = DalamudService.GameInteropProvider.HookFromSignature(
+            CountdownTimerSig,
             OnCountdownTimerHook);
         _countdownTimerHook.Enable();
     }
@@ -41,13 +41,15 @@ public class CountdownEvent : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private nint OnCountdownTimerHook(ulong value)
+    private void OnCountdownTimerHook(ulong value)
     {
-        if (value == 0) return _countdownTimerHook!.Original(value);
+        _countdownTimerHook.Original(value);
+        
+        if (value == 0) return;
             
         float countdownValue = Marshal.PtrToStructure<float>((IntPtr)value + 0x2c);
         
-        PluginLog.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
+        DalamudService.Log.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
 
         // Reset on countdown completion
         if (countdownValue <= 0f)
@@ -55,7 +57,7 @@ public class CountdownEvent : IDisposable
             _countdownStartPlayed = false;
             _countdown10Played = false;
             
-            return _countdownTimerHook!.Original(value);
+            return;
         }
 
         // Countdown started
@@ -71,7 +73,5 @@ public class CountdownEvent : IDisposable
             if (Configuration.Instance.EnableCountdown10Event) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
             _countdown10Played = true;
         }
-
-        return _countdownTimerHook!.Original(value);
     }
 }

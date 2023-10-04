@@ -1,7 +1,7 @@
 using System;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
@@ -24,7 +24,7 @@ public class PlayerDeathEvent : IDisposable
         GC.SuppressFinalize(this);
     }
     
-    private void OnFrameworkUpdate(Framework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
         PlayerCharacter? player = DalamudService.ClientState.LocalPlayer;
         if (player == null) return;

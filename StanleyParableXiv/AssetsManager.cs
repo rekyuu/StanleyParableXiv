@@ -22,7 +22,7 @@ public static class AssetsManager
     /// </summary>
     public static void UpdateVoiceLines()
     {
-        PluginLog.Information("Validating assets");
+        DalamudService.Log.Information("Validating assets");
         
         bool updateNeeded = false;
         
@@ -47,12 +47,12 @@ public static class AssetsManager
 
         if (!updateNeeded)
         {
-            PluginLog.Information("Assets validated, nothing to do");
+            DalamudService.Log.Information("Assets validated, nothing to do");
             return;
         }
 
         IsUpdating = true;
-        PluginLog.Information("Downloading assets");
+        DalamudService.Log.Information("Downloading assets");
 
         // Download assets
         string downloadLocation = $"{configDir}/assets-{RequiredAssetsVersion}.zip";
@@ -83,12 +83,12 @@ public static class AssetsManager
         }
         
         // Extract assets
-        PluginLog.Information("Extracting assets");
+        DalamudService.Log.Information("Extracting assets");
         
         ZipFile.ExtractToDirectory(downloadLocation, assetsDir);
         File.Delete(downloadLocation);
         
-        PluginLog.Debug("Asset extraction complete");
+        DalamudService.Log.Debug("Asset extraction complete");
         IsUpdating = false;
         
         // Validate the downloaded assets

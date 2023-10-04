@@ -1,12 +1,15 @@
 using System;
 using Dalamud.Game.Network;
+using Dalamud.Hooking;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
 
 public class MarketBoardPurchaseEvent : IDisposable
 {
-    private DateTimeOffset _marketBoardPurchaseCooldown; 
+    private const string MarketBoardPurchaseSig = "40 55 53 57 48 8B EC 48 83 EC ?? 48 8B 05 ?? ?? ?? ?? 48 33 C4 48 89 45 ?? 48 8B 0D";
+    private DateTimeOffset _marketBoardPurchaseCooldown;
+    private readonly Hook<Action<nint, nint>> _marketBoardPurchaseHook;
     
     /// <summary>
     /// Fires on market board purchases.
@@ -14,20 +17,32 @@ public class MarketBoardPurchaseEvent : IDisposable
     /// </summary>
     public MarketBoardPurchaseEvent()
     {
-        DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
+        _marketBoardPurchaseHook = DalamudService.GameInteropProvider.HookFromSignature(
+            MarketBoardPurchaseSig,
+            OnMarketBoardPurchase);
+        _marketBoardPurchaseHook.Enable();
     }
     
     public void Dispose()
     {
-        DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        switch (_marketBoardPurchaseHook)
+        {
+            case { IsDisposed: true }:
+                return;
+            case { IsEnabled: true }:
+                _marketBoardPurchaseHook.Disable();
+                break;
+        }
+
+        _marketBoardPurchaseHook?.Dispose();
+        
         GC.SuppressFinalize(this);
     }
 
-    private void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
-        NetworkMessageDirection direction)
+    private void OnMarketBoardPurchase(nint a1, nint a2)
     {
-        // Will probably break on game updates until opcodes are updated.
-        if (opCode != DalamudService.DataManager.ServerOpCodes["MarketBoardPurchase"]) return;
+        _marketBoardPurchaseHook.Original(a1, a2);
+        
         if (_marketBoardPurchaseCooldown > DateTimeOffset.Now) return;
 
         if (Configuration.Instance.EnableMarketBoardPurchaseEvent)

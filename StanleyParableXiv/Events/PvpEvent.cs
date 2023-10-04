@@ -15,7 +15,7 @@ namespace StanleyParableXiv.Events;
 
 public class PvpEvent : IDisposable
 {
-    private string _playerName;
+    private readonly string _playerName;
     private Dictionary<string, PlayerCharacter> _partyMembers = new();
 
     private bool _firstBlood = false;
@@ -47,7 +47,7 @@ public class PvpEvent : IDisposable
 
     private void ResetKillCounts()
     {
-        PluginLog.Debug("Clearing PvP kill streak stats");
+        DalamudService.Log.Debug("Clearing PvP kill streak stats");
         
         _partyMembers = new Dictionary<string, PlayerCharacter>();
         
@@ -68,7 +68,7 @@ public class PvpEvent : IDisposable
             string name = partyMember.Name.TextValue;
             _partyMembers[name] = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember)!;
             
-            PluginLog.Debug("{Name} is added to the PvP party", name);
+            DalamudService.Log.Debug("{Name} is added to the PvP party", name);
         }
 
         if (Configuration.Instance.EnablePvpPrepareEvent)
@@ -90,7 +90,7 @@ public class PvpEvent : IDisposable
         if (type is not ((XivChatType)4922 or (XivChatType)2874)) return;
         
         Payload[] playerPayloads = message.Payloads.Where(x => x.Type == PayloadType.Player).ToArray();
-        PluginLog.Verbose("[{Type}] {Message}", type, message);
+        DalamudService.Log.Verbose("[{Type}] {Message}", type, message);
 
         if (playerPayloads.Length == 0) return;
 
@@ -167,7 +167,7 @@ public class PvpEvent : IDisposable
         
         if (string.IsNullOrEmpty(killerName) || string.IsNullOrEmpty(killedName)) return;
 
-        PluginLog.Verbose("{KillerName} -> {KilledName}", killerName, killedName);
+        DalamudService.Log.Verbose("{KillerName} -> {KilledName}", killerName, killedName);
 
         // Play on the first kill of the match.
         if (!_firstBlood)
@@ -194,7 +194,7 @@ public class PvpEvent : IDisposable
                 
         _multikillCooldowns[killerName] = DateTimeOffset.Now + TimeSpan.FromSeconds(15);
         
-        PluginLog.Debug("{KillerName} multikill streak: {Count}", killerName, _multikills[killerName]);
+        DalamudService.Log.Debug("{KillerName} multikill streak: {Count}", killerName, _multikills[killerName]);
 
         bool multikills = Configuration.Instance.EnablePvpMultikillsEvent;
         
@@ -232,7 +232,7 @@ public class PvpEvent : IDisposable
         
         bool killStreaks = Configuration.Instance.EnablePvpKillStreaksEvent;
         
-        PluginLog.Debug("{KillerName} kill streak: {Count}", killerName, _killStreaks[killerName]);
+        DalamudService.Log.Debug("{KillerName} kill streak: {Count}", killerName, _killStreaks[killerName]);
         
         switch (_killStreaks[killerName])
         {

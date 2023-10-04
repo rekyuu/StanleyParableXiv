@@ -2,9 +2,9 @@
 using System.Threading.Tasks;
 using Dalamud.Game.Command;
 using Dalamud.Plugin;
-using Dalamud.Game;
 using Dalamud.Interface.Windowing;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Ui;
 using StanleyParableXiv.Utility;
@@ -26,7 +26,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public Plugin(DalamudPluginInterface pluginInterface)
     {
-        PluginLog.Information("Starting plugin");
+        DalamudService.Log.Information("Starting plugin");
         
         // Initialize Dalamud services.
         DalamudService.Initialize(pluginInterface);
@@ -75,7 +75,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        PluginLog.Information("Disposing plugin");
+        DalamudService.Log.Information("Disposing plugin");
             
         _eventService.Dispose();
         AudioPlayer.Instance.Dispose();
@@ -99,7 +99,7 @@ public sealed class Plugin : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "Exception occurred while updating assets");
+            DalamudService.Log.Error(ex, "Exception occurred while updating assets");
         }
     }
 
@@ -129,19 +129,19 @@ public sealed class Plugin : IDalamudPlugin
         }
         catch (Exception ex)
         {
-            PluginLog.Debug(ex, "Exception occurred while setting volume via command");
+            DalamudService.Log.Debug(ex, "Exception occurred while setting volume via command");
             DalamudService.ChatGui.PrintError($"\"{commandArgs}\" is not a valid setting.");
         }
     }
 
     private static void OnTestCommand(string command, string commandArgs)
     {
-        
+        // Sorry, nothing
     }
 
     private static void OnConfigReload(string command, string arguments) => Configuration.Reload();
 
-    private void OnFrameworkUpdate(Framework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
         // Updates the mixer volume when bound to an FFXIV volume source when changed.
         if (!Configuration.Instance.BindToXivVolumeSource) return;
@@ -151,7 +151,7 @@ public sealed class Plugin : IDalamudPlugin
             
         if (_lastXivVolumeSource == nextVolumeSource && _lastXivMasterVolume == nextMasterVolume) return;
             
-        PluginLog.Debug("Updating volume due to framework update");
+        DalamudService.Log.Debug("Updating volume due to framework update");
         AudioPlayer.Instance.UpdateVolume();
             
         _lastXivVolumeSource = nextVolumeSource;

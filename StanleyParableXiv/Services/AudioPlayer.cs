@@ -500,11 +500,11 @@ public class AudioPlayer : IDisposable
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "Exception was thrown while setting volume");
+            DalamudService.Log.Error(ex, "Exception was thrown while setting volume");
         }
         finally
         {
-            PluginLog.Debug("Setting volume to {TargetVolume}", targetVolume);
+            DalamudService.Log.Debug("Setting volume to {TargetVolume}", targetVolume);
             _sampleProvider.Volume = targetVolume;
         }
 
@@ -534,11 +534,11 @@ public class AudioPlayer : IDisposable
             // Fix killing spree lines being louder than others
             if (result.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
             {
-                PluginLog.Debug("Lowering volume for Killing Spree line");
+                DalamudService.Log.Debug("Lowering volume for Killing Spree line");
                 _sampleProvider.Volume = _killingSpreeVolume;
             }
 
-            PluginLog.Debug("Playing {Result} for event {Event}", result, @event);
+            DalamudService.Log.Debug("Playing {Result} for event {Event}", result, @event);
             PlaySound(result);
 
             if (result == "announcer_dlc_stanleyparable/announcer_respawn_09.mp3") _adviceFollowUp = true;
@@ -558,11 +558,11 @@ public class AudioPlayer : IDisposable
         if (_isPlaying) return;
 
         string audioPath = $"{DalamudService.PluginInterface.GetPluginConfigDirectory()}/assets/{resourcePath}";
-        PluginLog.Debug("Attempting to play {ResourcePath}", resourcePath);
+        DalamudService.Log.Debug("Attempting to play {ResourcePath}", resourcePath);
 
         if (!File.Exists(audioPath))
         {
-            PluginLog.Error("Audio file does not exist: {AudioPath}", audioPath);
+            DalamudService.Log.Error("Audio file does not exist: {AudioPath}", audioPath);
             return;
         }
 
@@ -592,7 +592,7 @@ public class AudioPlayer : IDisposable
         // Restore fix killing spree lines being louder than others
         if (_lastPlayedClip.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
         {
-            PluginLog.Debug("Restoring volume for Killing Spree line");
+            DalamudService.Log.Debug("Restoring volume for Killing Spree line");
             _sampleProvider.Volume = _originalVolume;
         }
         

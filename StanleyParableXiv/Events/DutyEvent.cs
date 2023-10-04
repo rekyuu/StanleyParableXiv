@@ -7,7 +7,9 @@ using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Network;
+using Dalamud.Hooking;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using Lumina.Excel.GeneratedSheets;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
@@ -16,6 +18,8 @@ namespace StanleyParableXiv.Events;
 
 public class DutyEvent : IDisposable
 {
+    private const string ActorControlSelfSig = "48 89 5C 24 ?? 48 89 74 24 ?? 57 48 83 EC 30 48 8B D9 49 8B F8 41 0F B7 08";
+    
     private TerritoryType? _currentTerritory;
     private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
@@ -24,6 +28,8 @@ public class DutyEvent : IDisposable
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private readonly Dictionary<uint, uint?> _partyStatus = new();
+
+    private readonly Hook<Action<uint, uint, uint, uint, uint, uint, uint, uint, ulong, byte>> _actorControlSelfHook;
 
     private readonly uint?[] _territoriesToIgnore = 
     {
@@ -54,7 +60,11 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.EnterPvP += OnEnterPvP;
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.Framework.Update += OnFrameworkUpdate;
-        DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
+        
+        _actorControlSelfHook = DalamudService.GameInteropProvider.HookFromSignature(
+            ActorControlSelfSig,
+            OnActorControlSelf);
+        _actorControlSelfHook.Enable();
     }
 
     public void Dispose()
@@ -65,7 +75,17 @@ public class DutyEvent : IDisposable
         DalamudService.ClientState.EnterPvP -= OnEnterPvP;
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
-        DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        
+        switch (_actorControlSelfHook)
+        {
+            case { IsDisposed: true }:
+                return;
+            case { IsEnabled: true }:
+                _actorControlSelfHook.Disable();
+                break;
+        }
+
+        _actorControlSelfHook?.Dispose();
         
         GC.SuppressFinalize(this);
     }
@@ -102,23 +122,20 @@ public class DutyEvent : IDisposable
 
     private void OnLeavePvp() => _isInPvp = false;
 
-    private void OnFrameworkUpdate(Framework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
         CheckIfPlayerIsBoundByDuty();
         CheckPartyMembers();
     }
 
-    private unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
-        NetworkMessageDirection direction)
+    private void OnActorControlSelf(uint category, uint cat, uint a3, uint updateType, uint a5, uint a6, uint a7, 
+        uint a8, ulong targetId, byte a10)
     {
-        if (opCode != DalamudService.DataManager.ServerOpCodes["ActorControlSelf"]) return;
-        
-        ushort cat = *(ushort*)(dataPtr + 0x00);
-        uint updateType = *(uint*)(dataPtr + 0x08);
+        _actorControlSelfHook.Original(category, cat, a3, updateType, a5, a6, a7, a8, targetId, a10);
 
         switch (cat)
         {
-            // Start PvP Countdown 
+            // Start PvP Countdown
             case 0x6D when updateType == 0x40000004:
                 _dutyStarted = true;
                 _dutyCompleted = false;
@@ -135,7 +152,7 @@ public class DutyEvent : IDisposable
                         AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
                     });
                 }
-                
+
                 break;
             // PvP win
             case 0x355 when updateType == 0x1F4:
@@ -149,7 +166,7 @@ public class DutyEvent : IDisposable
                         AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
                     });
                 }
-                
+
                 break;
             // PvP loss
             case 0x355 when updateType == 0xFA:
@@ -163,7 +180,7 @@ public class DutyEvent : IDisposable
                         AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
                     });
                 }
-                
+
                 break;
         }
     }
@@ -225,7 +242,7 @@ public class DutyEvent : IDisposable
             if (nextStatus == lastStatus) continue;
             
             _partyStatus[objId] = nextStatus;
-            PluginLog.Debug("Party member status changed = {PlayerId} {PlayerName}, {PreviousOnlineStatus} -> {NextOnlineStatus}", 
+            DalamudService.Log.Debug("Party member status changed = {PlayerId} {PlayerName}, {PreviousOnlineStatus} -> {NextOnlineStatus}", 
                 objId, partyMember.Name, lastStatus!, nextStatus!);
 
             if (!_dutyStarted) return;
@@ -265,7 +282,7 @@ public class DutyEvent : IDisposable
             
             Configuration.Instance.Save();
             
-            PluginLog.Debug("Kills updated for {Territory}: {Kills}", territory, Configuration.Instance.CompletedHighEndDuties[territory]);
+            DalamudService.Log.Debug("Kills updated for {Territory}: {Kills}", territory, Configuration.Instance.CompletedHighEndDuties[territory]);
 
             if (Configuration.Instance.EnableBossKillStreaks)
             {

@@ -74,7 +74,7 @@ public static class XivUtility
         }
         catch (Exception ex)
         {
-            PluginLog.Error(ex, "An exception occurred while obtaining volume");
+            DalamudService.Log.Error(ex, "An exception occurred while obtaining volume");
             return 50;
         }
     }
@@ -99,7 +99,7 @@ public static class XivUtility
             || name.EndsWith("(Savage)")
             || name.EndsWith("(Ultimate)");
         
-        PluginLog.Debug("{DutyName} is high end: {IsHighEnd}", name, isHighEndDuty);
+        DalamudService.Log.Debug("{DutyName} is high end: {IsHighEnd}", name, isHighEndDuty);
 
         return isHighEndDuty;
     }

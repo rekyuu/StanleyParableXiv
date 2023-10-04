@@ -1,19 +1,18 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Dalamud.Game;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Hooking;
 using Dalamud.Logging;
+using Dalamud.Plugin.Services;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
 
 public class AfkEvent : IDisposable
 {
-    private delegate long AfkTimerHookDelegate(IntPtr a1, float a2);
+    private const string AfkTimerSig = "48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55";
     private IntPtr _afkTimerBaseAddress = IntPtr.Zero;
-    private readonly Hook<AfkTimerHookDelegate>? _afkTimerHook;
+    private readonly Hook<Func<IntPtr, float, long>> _afkTimerHook;
     private TimerService? _afkTimerService;
     private bool _afkPlayed = false;
     private bool _isInCutscene = false;
@@ -26,8 +25,8 @@ public class AfkEvent : IDisposable
     {
         DalamudService.Framework.Update += OnFrameworkUpdate;
         
-        _afkTimerHook = Hook<AfkTimerHookDelegate>.FromAddress(
-            DalamudService.SigScanner.ScanText("48 8B C4 48 89 58 18 48 89 70 20 55 57 41 55"),
+        _afkTimerHook = DalamudService.GameInteropProvider.HookFromSignature(
+            AfkTimerSig,
             OnAfkTimerHook);
         _afkTimerHook.Enable();
     }
@@ -43,7 +42,7 @@ public class AfkEvent : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private void OnFrameworkUpdate(Framework framework)
+    private void OnFrameworkUpdate(IFramework framework)
     {
         _isInCutscene = DalamudService.Condition[ConditionFlag.OccupiedInCutSceneEvent];
     }
@@ -58,7 +57,7 @@ public class AfkEvent : IDisposable
             float* afkTimer2 = (float*)(_afkTimerBaseAddress + 24);
             float* afkTimer3 = (float*)(_afkTimerBaseAddress + 28);
             
-            PluginLog.Verbose($"AFK Timers = {*afkTimer1}/{*afkTimer2}/{*afkTimer3}");
+            DalamudService.Log.Verbose($"AFK Timers = {*afkTimer1}/{*afkTimer2}/{*afkTimer3}");
                 
             // Not really sure what each timer is for, so we'll just pick the longest.
             // Skip playing if they're in a cutscene.
