@@ -38,7 +38,8 @@ public static class AssetsManager
         DalamudService.Log.Information("Validating assets");
         
         // MIGRATION: delete old assets folder if it exists
-        Directory.Delete($"{DalamudService.PluginInterface.GetPluginConfigDirectory()}/assets", true);
+        string oldAssetsDir = $"{DalamudService.PluginInterface.GetPluginConfigDirectory()}/assets";
+        if (Directory.Exists(oldAssetsDir)) Directory.Delete(oldAssetsDir, true);
         
         bool updateNeeded = force;
         
@@ -63,19 +64,9 @@ public static class AssetsManager
 
         IsUpdating = true;
         LogAndNotify("Downloading assets", NotificationType.Info);
-
-        bool firstDownload = !Directory.Exists(assetsDir) && Configuration.Instance.AssetsFileType == AssetsFileType.Mp3;
-        if (firstDownload)
-        {
-            Configuration.Instance.AssetsFileType = AssetsFileType.Mp3;
-            if (Environment.GetEnvironmentVariable("XL_WINEONLINUX") == "true")
-                Configuration.Instance.AssetsFileType = AssetsFileType.Ogg;
-            
-            Configuration.Instance.Save();
-        }
         
         // Clear folder if it exists
-        Directory.Delete(assetsDir, true);
+        if (Directory.Exists(assetsDir)) Directory.Delete(assetsDir, true);
 
         // Download assets
         string downloadLocation = $"{configDir}/assets-{RequiredAssetsVersion}-{assetsType}.zip";
@@ -120,7 +111,7 @@ public static class AssetsManager
         CurrentAssetsVersion = CurrentDownloadedAssetVersion();
         if (CurrentAssetsVersion == RequiredAssetsVersion) return;
         
-        DalamudService.Log.Error("Downloaded assets do not match the requested version. Requested = {RequiredAssetsVersion}, Downloaded = {CurrentAssetsVersion}", RequiredAssetsVersion, CurrentAssetsVersion);
+        DalamudService.Log.Error("Downloaded assets do not match the requested version. Requested = {RequiredAssetsVersion}, Downloaded = {CurrentAssetsVersion}", RequiredAssetsVersion, CurrentAssetsVersion ?? "null");
     }
 
     public static long GetRequiredDiskSpace()

@@ -86,23 +86,17 @@ public class ConfigurationWindow : Window, IDisposable
                         AudioPlayer.Instance.UpdateVolume();
                     }
                 }
-
+                
+                string buttonText = "Play random voice line";
                 if (AssetsManager.IsUpdating)
                 {
-                    ImGui.Text("\nVoice lines are currently downloading, please wait...\n\n");
+                    buttonText = "Voice lines are currently downloading, please wait...";
+                    ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
                 }
-                else if (!AssetsManager.HasEnoughFreeDiskSpace)
+                    
+                if (ImGui.Button(buttonText))
                 {
-                    ImGui.Text("\nUnable to download voice lines!\n\n100MB of free disk space is required.\nPlease clear some space and try again.\n\n");
-
-                    if (ImGui.Button("Download voice lines"))
-                    {
-                        Plugin.UpdateVoiceLines();
-                    }
-                }
-                else
-                {
-                    if (ImGui.Button("Play random voice line"))
+                    if (!AssetsManager.IsUpdating)
                     {
                         Random random = new();
                         Array events = Enum.GetValues(typeof(AudioEvent));
@@ -111,6 +105,8 @@ public class ConfigurationWindow : Window, IDisposable
                         AudioPlayer.Instance.PlayRandomSoundFromCategory(result);
                     }
                 }
+                    
+                if (AssetsManager.IsUpdating) ImGui.PopStyleVar();
                 
                 ImGui.EndTabItem();
             }
@@ -362,11 +358,7 @@ public class ConfigurationWindow : Window, IDisposable
                 
                 ImGui.Separator();
                 
-                if (AssetsManager.IsUpdating)
-                {
-                    ImGui.Text("\nVoice lines are currently downloading, please wait...\n\n");
-                }
-                else if (!AssetsManager.HasEnoughFreeDiskSpace)
+                if (!AssetsManager.HasEnoughFreeDiskSpace)
                 {
                     long diskSpaceRequired = AssetsManager.GetRequiredDiskSpace();
                     long diskSpaceRequiredMb = diskSpaceRequired / 1024 / 1024;
@@ -380,10 +372,19 @@ public class ConfigurationWindow : Window, IDisposable
                 }
                 else
                 {
-                    if (ImGui.Button("Re-download assets"))
+                    string buttonText = "Re-download assets";
+                    if (AssetsManager.IsUpdating)
                     {
-                        Plugin.UpdateVoiceLines(true);
+                        buttonText = "Voice lines are currently downloading, please wait...";
+                        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
                     }
+                    
+                    if (ImGui.Button(buttonText))
+                    {
+                        if (!AssetsManager.IsUpdating) Plugin.UpdateVoiceLines(true);
+                    }
+                    
+                    if (AssetsManager.IsUpdating) ImGui.PopStyleVar();
                 }
                 
                 if (!mp3AssetsDownloaded) ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
