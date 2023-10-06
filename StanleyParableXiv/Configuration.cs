@@ -34,6 +34,11 @@ public class Configuration : IPluginConfiguration
     public uint XivVolumeSourceBoost { get; set; } = 100;
 
     /// <summary>
+    /// The file type of assets to use.
+    /// </summary>
+    public AssetsFileType AssetsFileType { get; set; } = AssetsFileType.Mp3;
+
+    /// <summary>
     /// Enables AFK sound events.
     /// </summary>
     public bool EnableAfkEvent { get; set; } = true;

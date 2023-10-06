@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Interface.Components;
@@ -322,9 +324,43 @@ public class ConfigurationWindow : Window, IDisposable
             if (ImGui.BeginTabItem("Assets"))
             {
                 ImGui.PushID("Assets");
+                
+                string configDir = DalamudService.PluginInterface.GetPluginConfigDirectory();
+                string baseAssetsDir = $"{configDir}/assets";
 
-                ImGui.Text($"Required assets version: {AssetsManager.RequiredAssetsVersion}");
-                ImGui.Text($"Current assets version: {AssetsManager.CurrentAssetsVersion}");
+                bool mp3AssetsDownloaded = Directory.Exists($"{baseAssetsDir}-mp3");
+                bool oggAssetsDownloaded = Directory.Exists($"{baseAssetsDir}-ogg");
+                
+                List<string> assetsDownloaded = new();
+                if (mp3AssetsDownloaded) assetsDownloaded.Add("mp3");
+                if (oggAssetsDownloaded) assetsDownloaded.Add("ogg");
+
+                ImGui.Text("Asset file type");
+                ImGuiComponents.HelpMarker("OGG files are smaller, but may fail to play on systems missing codecs.");
+                
+                int assetsFileType = (int)Configuration.Instance.AssetsFileType;
+                string[] assetsFileTypeOptions =
+                {
+                    "MP3",
+                    "OGG"
+                };
+
+                if (ImGui.Combo("##AssetsFileType", ref assetsFileType, assetsFileTypeOptions, 
+                        assetsFileTypeOptions.Length))
+                {
+                    Configuration.Instance.AssetsFileType = (AssetsFileType)assetsFileType;
+                    Configuration.Instance.Save();
+
+                    if ((Configuration.Instance.AssetsFileType == AssetsFileType.Mp3 && !mp3AssetsDownloaded) ||
+                        (Configuration.Instance.AssetsFileType == AssetsFileType.Ogg && !oggAssetsDownloaded))
+                    {
+                        Plugin.UpdateVoiceLines();
+                    }
+                }
+                
+                ImGui.Text($"Assets currently downloaded: {string.Join(", ", assetsDownloaded)}");
+                
+                ImGui.Separator();
                 
                 if (AssetsManager.IsUpdating)
                 {
@@ -332,7 +368,10 @@ public class ConfigurationWindow : Window, IDisposable
                 }
                 else if (!AssetsManager.HasEnoughFreeDiskSpace)
                 {
-                    ImGui.Text("\nUnable to download voice lines!\n\n100MB of free disk space is required.\nPlease clear some space and try again.\n\n");
+                    long diskSpaceRequired = AssetsManager.GetRequiredDiskSpace();
+                    long diskSpaceRequiredMb = diskSpaceRequired / 1024 / 1024;
+                    
+                    ImGui.Text($"\nUnable to download voice lines!\n\n{diskSpaceRequiredMb}MB of free disk space is required.\nPlease clear some space and try again.\n\n");
 
                     if (ImGui.Button("Download voice lines"))
                     {
@@ -341,12 +380,36 @@ public class ConfigurationWindow : Window, IDisposable
                 }
                 else
                 {
-                    ImGui.Text("\n");
                     if (ImGui.Button("Re-download assets"))
                     {
-                        Task.Run(() => AssetsManager.UpdateVoiceLines(true));
+                        Plugin.UpdateVoiceLines(true);
                     }
                 }
+                
+                if (!mp3AssetsDownloaded) ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
+                if (ImGui.Button("Delete MP3 assets"))
+                {
+                    if (mp3AssetsDownloaded)
+                    {
+                        Task.Run(() => Directory.Delete($"{baseAssetsDir}-mp3", true));
+                    }
+                }
+                if (!mp3AssetsDownloaded) ImGui.PopStyleVar();
+                
+                if (!oggAssetsDownloaded) ImGui.PushStyleVar(ImGuiStyleVar.Alpha, ImGui.GetStyle().Alpha * 0.5f);
+                if (ImGui.Button("Delete OGG assets"))
+                {
+                    if (oggAssetsDownloaded)
+                    {
+                        Task.Run(() => Directory.Delete($"{baseAssetsDir}-ogg", true));
+                    }
+                }
+                if (!oggAssetsDownloaded) ImGui.PopStyleVar();
+                
+                ImGui.Separator();
+
+                ImGui.Text($"Required assets version: {AssetsManager.RequiredAssetsVersion}");
+                ImGui.Text($"Current assets version: {AssetsManager.CurrentAssetsVersion}");
                 
                 ImGui.PopID();
 

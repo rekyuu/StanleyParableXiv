@@ -90,11 +90,11 @@ public sealed class Plugin : IDalamudPlugin
         DalamudService.Framework.Update -= OnFrameworkUpdate;
     }
 
-    public static void UpdateVoiceLines()
+    public static void UpdateVoiceLines(bool force = false)
     {
         try
         {
-            Task.Run(() => AssetsManager.UpdateVoiceLines());
+            Task.Run(() => AssetsManager.UpdateVoiceLines(force));
         }
         catch (Exception ex)
         {

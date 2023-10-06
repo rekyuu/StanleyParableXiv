@@ -8,16 +8,27 @@ using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv;
 
+public enum AssetsFileType
+{
+    Mp3,
+    Ogg
+}
+
 public static class AssetsManager
 {
+    
+    public const string RequiredAssetsVersion = "2.1.0.0";
+    
     public static bool IsUpdating { get; private set; } = false;
 
     public static bool HasEnoughFreeDiskSpace { get; private set; } = true;
 
     public static string? CurrentAssetsVersion { get; private set; }
     
-    public const string RequiredAssetsVersion = "2.0.0.0";
-    private const long RequiredDiskSpaceBytes = 100_000_000; // Expanded bytes
+    private const long RequiredDiskSpaceMp3Compressed = 40_101_040;
+    private const long RequiredDiskSpaceMp3Extracted = 44_343_296;
+    private const long RequiredDiskSpaceOggCompressed = 22_699_321;
+    private const long RequiredDiskSpaceOggExtracted = 24_547_328;
 
     /// <summary>
     /// Checks if the assets exist, are the current version, and downloads them if necessary.
@@ -26,11 +37,20 @@ public static class AssetsManager
     {
         DalamudService.Log.Information("Validating assets");
         
+        // MIGRATION: delete old assets folder if it exists
+        Directory.Delete($"{DalamudService.PluginInterface.GetPluginConfigDirectory()}/assets", true);
+        
         bool updateNeeded = force;
         
         // Check if assets are already downloaded and are the current version
         string configDir = DalamudService.PluginInterface.GetPluginConfigDirectory();
-        string assetsDir = $"{configDir}/assets";
+        string assetsDir = GetAssetsDirectory();
+        string assetsType = Configuration.Instance.AssetsFileType switch
+        {
+            AssetsFileType.Mp3 => "mp3",
+            AssetsFileType.Ogg => "ogg",
+            _ => throw new ArgumentOutOfRangeException()
+        };
 
         CurrentAssetsVersion = CurrentDownloadedAssetVersion();
         if (CurrentAssetsVersion != RequiredAssetsVersion) updateNeeded = true;
@@ -43,17 +63,27 @@ public static class AssetsManager
 
         IsUpdating = true;
         LogAndNotify("Downloading assets", NotificationType.Info);
+
+        bool firstDownload = !Directory.Exists(assetsDir) && Configuration.Instance.AssetsFileType == AssetsFileType.Mp3;
+        if (firstDownload)
+        {
+            Configuration.Instance.AssetsFileType = AssetsFileType.Mp3;
+            if (Environment.GetEnvironmentVariable("XL_WINEONLINUX") == "true")
+                Configuration.Instance.AssetsFileType = AssetsFileType.Ogg;
+            
+            Configuration.Instance.Save();
+        }
         
         // Clear folder if it exists
         Directory.Delete(assetsDir, true);
 
         // Download assets
-        string downloadLocation = $"{configDir}/assets-{RequiredAssetsVersion}.zip";
-        Uri assetUri = new($"https://github.com/rekyuu/StanleyParableXiv/releases/download/{RequiredAssetsVersion}/assets.zip");
+        string downloadLocation = $"{configDir}/assets-{RequiredAssetsVersion}-{assetsType}.zip";
+        Uri assetUri = new($"https://github.com/rekyuu/StanleyParableXiv/releases/download/{RequiredAssetsVersion}/assets-{assetsType}.zip");
 
         HasEnoughFreeDiskSpace = true;
         long freeDiskSpace = new DriveInfo(downloadLocation).AvailableFreeSpace;
-        if (freeDiskSpace < RequiredDiskSpaceBytes)
+        if (freeDiskSpace < GetRequiredDiskSpace())
         {
             LogAndNotify("Not enough free disk space to extract assets", NotificationType.Error);
             
@@ -69,7 +99,7 @@ public static class AssetsManager
         
         if (!response.IsSuccessStatusCode)
         {
-            throw new Exception($"Unable to download assets: {response.StatusCode} - {response.Content}");
+            LogAndNotify($"Unable to download assets: {response.StatusCode} - {response.Content}", NotificationType.Error);
         }
         
         using (FileStream fs = new(downloadLocation, FileMode.CreateNew))
@@ -88,16 +118,37 @@ public static class AssetsManager
         
         // Validate the downloaded assets
         CurrentAssetsVersion = CurrentDownloadedAssetVersion();
-        if (CurrentAssetsVersion != RequiredAssetsVersion)
-        {
-            throw new Exception($"Downloaded assets do not match the requested version. Requested = {RequiredAssetsVersion}, Downloaded = {CurrentAssetsVersion}");
-        }
+        if (CurrentAssetsVersion == RequiredAssetsVersion) return;
+        
+        DalamudService.Log.Error("Downloaded assets do not match the requested version. Requested = {RequiredAssetsVersion}, Downloaded = {CurrentAssetsVersion}", RequiredAssetsVersion, CurrentAssetsVersion);
     }
 
-    public static string? CurrentDownloadedAssetVersion()
+    public static long GetRequiredDiskSpace()
+    {
+        return Configuration.Instance.AssetsFileType switch
+        {
+            AssetsFileType.Mp3 => RequiredDiskSpaceMp3Compressed + RequiredDiskSpaceMp3Extracted,
+            AssetsFileType.Ogg => RequiredDiskSpaceOggCompressed + RequiredDiskSpaceOggExtracted,
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    public static string GetAssetsDirectory()
     {
         string configDir = DalamudService.PluginInterface.GetPluginConfigDirectory();
-        string assetsDir = $"{configDir}/assets";
+        string baseAssetsDir = $"{configDir}/assets";
+        
+        return Configuration.Instance.AssetsFileType switch
+        {
+            AssetsFileType.Mp3 => $"{baseAssetsDir}-mp3",
+            AssetsFileType.Ogg => $"{baseAssetsDir}-ogg",
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+
+    private static string? CurrentDownloadedAssetVersion()
+    {
+        string assetsDir = GetAssetsDirectory();
         string manifestFile = $"{assetsDir}/manifest.json";
 
         if (!File.Exists(manifestFile)) return null;
