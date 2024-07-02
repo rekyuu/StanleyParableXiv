@@ -44,11 +44,6 @@ public class Configuration : IPluginConfiguration
     public bool EnableAfkEvent { get; set; } = true;
 
     /// <summary>
-    /// The amount of time before the AFK sound plays.
-    /// </summary>
-    public uint AfkEventTimeframe { get; set; } = 300;
-
-    /// <summary>
     /// Enables the countdown start event.
     /// </summary>
     public bool EnableCountdownStartEvent { get; set; } = true;
