@@ -144,8 +144,6 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                     
-                    ImGui.Separator();
-                    
                     bool enableAfkEvent = Configuration.Instance.EnableAfkEvent;
                     if (ImGui.Checkbox("AFK", ref enableAfkEvent))
                     {
