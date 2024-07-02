@@ -51,7 +51,7 @@ public static class XivUtility
         try
         {
             Framework* framework = Framework.Instance();
-            ConfigBase configBase = framework->SystemConfig.CommonSystemConfig.ConfigBase;
+            SystemConfig configBase = framework->SystemConfig.SystemConfigBase;
 
             for (int i = 0; i < configBase.ConfigCount; i++)
             {

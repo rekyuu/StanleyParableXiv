@@ -216,7 +216,7 @@ public class DutyEvent : IDisposable
             if (!partyListObjIds.Contains(objId)) _partyStatus.Remove(objId);
         }
         
-        foreach (PartyMember partyMember in DalamudService.PartyList)
+        foreach (IPartyMember partyMember in DalamudService.PartyList)
         {
             // Skip if they're not in the same instance
             if (_currentTerritory != partyMember.Territory.GameData) continue;
@@ -227,7 +227,7 @@ public class DutyEvent : IDisposable
             uint? nextStatus = null;
             uint? lastStatus = _partyStatus[objId];
             
-            PlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
+            IPlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
             if (player == null) continue;
             
             OnlineStatus? onlineStatus = player.OnlineStatus.GameData;
