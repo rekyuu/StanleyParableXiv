@@ -2,7 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Net.Http;
-using Dalamud.Interface.Internal.Notifications;
+using Dalamud.Interface.ImGuiNotification;
 using Newtonsoft.Json;
 using StanleyParableXiv.Services;
 
@@ -169,8 +169,14 @@ public static class AssetsManager
                 DalamudService.Log.Debug(message);
                 break;
         }
+
+        Notification notification = new()
+        {
+            Content = message,
+            Type = type
+        };
         
-        DalamudService.PluginInterface.UiBuilder.AddNotification(message, "StanleyParableXiv", type);
+        DalamudService.NotificationManager.AddNotification(notification);
     }
 }
 

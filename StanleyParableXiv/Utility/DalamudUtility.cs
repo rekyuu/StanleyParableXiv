@@ -15,7 +15,7 @@ public static class DalamudUtility
     /// <param name="pluginInterface">The Dalamud plugin interface.</param>
     /// <param name="resource">The path within the Resources folder.</param>
     /// <returns>The full path to the resource.</returns>
-    public static string GetResourcePath(DalamudPluginInterface pluginInterface, string resource)
+    public static string GetResourcePath(IDalamudPluginInterface pluginInterface, string resource)
     {
         return Path.Combine(pluginInterface.AssemblyLocation.Directory?.FullName!, $"Resources/{resource}");
     }
@@ -25,12 +25,12 @@ public static class DalamudUtility
     /// </summary>
     /// <param name="partyMember">The party member to get.</param>
     /// <returns>The party member as a player character object.</returns>
-    public static PlayerCharacter? GetPlayerCharacterFromPartyMember(PartyMember partyMember)
+    public static IPlayerCharacter? GetPlayerCharacterFromPartyMember(IPartyMember partyMember)
     {
         uint objId = partyMember.ObjectId;
-        GameObject? obj = DalamudService.ObjectTable.SearchById(objId);
+        IGameObject? obj = DalamudService.ObjectTable.SearchById(objId);
             
-        if (obj?.GetType() == typeof(PlayerCharacter)) return (obj as PlayerCharacter)!;
+        if (obj?.GetType() == typeof(IPlayerCharacter)) return (obj as IPlayerCharacter)!;
 
         return null;
     }

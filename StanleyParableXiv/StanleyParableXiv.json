@@ -5,7 +5,7 @@
   "Punchline": "Witty commentary to the brilliant things you do.",
   "Description": "Check /narrator for full options or use /narratorvolume to set volume manually.",
   "InternalName": "StanleyParableXiv",
-  "DalamudApiLevel": 9,
+  "DalamudApiLevel": 10,
   "AssemblyVersion": "any",
   "ApplicableVersion": "any",
   "IconUrl": "https://raw.githubusercontent.com/rekyuu/StanleyParableXiv/main/images/icon.png",

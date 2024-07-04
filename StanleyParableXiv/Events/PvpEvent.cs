@@ -15,7 +15,7 @@ namespace StanleyParableXiv.Events;
 public class PvpEvent : IDisposable
 {
     private readonly string _playerName;
-    private Dictionary<string, PlayerCharacter> _partyMembers = new();
+    private Dictionary<string, IPlayerCharacter> _partyMembers = new();
 
     private bool _firstBlood = false;
     
@@ -48,7 +48,7 @@ public class PvpEvent : IDisposable
     {
         DalamudService.Log.Debug("Clearing PvP kill streak stats");
         
-        _partyMembers = new Dictionary<string, PlayerCharacter>();
+        _partyMembers = new Dictionary<string, IPlayerCharacter>();
         
         _firstBlood = false;
         
@@ -62,7 +62,7 @@ public class PvpEvent : IDisposable
         ResetKillCounts();
 
         // This needs to be done to determine who killed who
-        foreach (PartyMember partyMember in DalamudService.PartyList)
+        foreach (IPartyMember partyMember in DalamudService.PartyList)
         {
             string name = partyMember.Name.TextValue;
             _partyMembers[name] = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember)!;
@@ -84,7 +84,7 @@ public class PvpEvent : IDisposable
         ResetKillCounts();
     }
 
-    private void OnChatMessage(XivChatType type, uint senderId, ref SeString sender, ref SeString message, ref bool isHandled)
+    private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool ishandled)
     {
         if (type is not ((XivChatType)4922 or (XivChatType)2874)) return;
         

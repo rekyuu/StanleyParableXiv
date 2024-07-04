@@ -26,7 +26,7 @@ public class PlayerDeathEvent : IDisposable
     
     private void OnFrameworkUpdate(IFramework framework)
     {
-        PlayerCharacter? player = DalamudService.ClientState.LocalPlayer;
+        IPlayerCharacter? player = DalamudService.ClientState.LocalPlayer;
         if (player == null) return;
 
         bool isDeadNext = player.IsDead;

@@ -23,7 +23,7 @@ public sealed class Plugin : IDalamudPlugin
     private uint _lastXivVolumeSource = 0;
     private uint _lastXivMasterVolume = 0;
 
-    public Plugin(DalamudPluginInterface pluginInterface)
+    public Plugin(IDalamudPluginInterface pluginInterface)
     {
         // Initialize Dalamud services.
         DalamudService.Initialize(pluginInterface);
@@ -63,7 +63,8 @@ public sealed class Plugin : IDalamudPlugin
 
         // Initialize Dalamud action hooks
         DalamudService.PluginInterface.UiBuilder.Draw += DrawUi;
-        DalamudService.PluginInterface.UiBuilder.OpenConfigUi += OnOpenConfigUi;
+        DalamudService.PluginInterface.UiBuilder.OpenMainUi += OnOpenMainConfigUi;
+        DalamudService.PluginInterface.UiBuilder.OpenConfigUi += OnOpenMainConfigUi;
         DalamudService.Framework.Update += OnFrameworkUpdate;
             
         // Open the window by default on (hopefully) local debug builds
@@ -86,7 +87,8 @@ public sealed class Plugin : IDalamudPlugin
         DalamudService.CommandManager.RemoveHandler("/narratorconfigreload");
 
         DalamudService.PluginInterface.UiBuilder.Draw -= DrawUi;
-        DalamudService.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenConfigUi;
+        DalamudService.PluginInterface.UiBuilder.OpenMainUi -= OnOpenMainConfigUi;
+        DalamudService.PluginInterface.UiBuilder.OpenConfigUi -= OnOpenMainConfigUi;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
     }
 
@@ -104,9 +106,9 @@ public sealed class Plugin : IDalamudPlugin
 
     private void DrawUi() => _windowSystem.Draw();
 
-    private void OnOpenConfigUi() => _configWindow.IsOpen = true;
+    private void OnOpenMainConfigUi() => _configWindow.IsOpen = true;
 
-    private void OnConfigCommand(string command, string commandArgs) => OnOpenConfigUi();
+    private void OnConfigCommand(string command, string commandArgs) => OnOpenMainConfigUi();
 
     private static void OnVolumeCommand(string command, string commandArgs)
     {

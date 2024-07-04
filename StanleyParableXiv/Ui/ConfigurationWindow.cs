@@ -144,22 +144,10 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Save();
                     }
                     
-                    ImGui.Separator();
-                    
                     bool enableAfkEvent = Configuration.Instance.EnableAfkEvent;
                     if (ImGui.Checkbox("AFK", ref enableAfkEvent))
                     {
                         Configuration.Instance.EnableAfkEvent = enableAfkEvent;
-                        Configuration.Instance.Save();
-                    }
-
-                    ImGui.PushItemWidth(64);
-                    int afkEventTimeframe = (int)Configuration.Instance.AfkEventTimeframe;
-                    if (ImGui.DragInt("AFK Timeframe", ref afkEventTimeframe, 30, 30))
-                    {
-                        if (afkEventTimeframe < 30) afkEventTimeframe = 30;
-                        
-                        Configuration.Instance.AfkEventTimeframe = (uint)afkEventTimeframe;
                         Configuration.Instance.Save();
                     }
                 }

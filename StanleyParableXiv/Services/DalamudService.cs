@@ -6,7 +6,7 @@ namespace StanleyParableXiv.Services;
 
 public class DalamudService
 {
-    public static void Initialize(DalamudPluginInterface pluginInterface) => pluginInterface.Create<DalamudService>();
+    public static void Initialize(IDalamudPluginInterface pluginInterface) => pluginInterface.Create<DalamudService>();
     
     [PluginService]
     public static IChatGui ChatGui { get; private set; } = null!;
@@ -39,11 +39,17 @@ public class DalamudService
     public static IPluginLog Log { get; private set; } = null!;
     
     [PluginService]
+    public static IMarketBoard MarketBoard { get; private set; } = null!;
+    
+    [PluginService]
+    public static INotificationManager NotificationManager { get; private set; } = null!;
+    
+    [PluginService]
     public static IObjectTable ObjectTable { get; private set; } = null!;
     
     [PluginService]
     public static IPartyList PartyList { get; private set; } = null!;
     
     [PluginService]
-    public static DalamudPluginInterface PluginInterface { get; private set; } = null!;
+    public static IDalamudPluginInterface PluginInterface { get; private set; } = null!;
 }
