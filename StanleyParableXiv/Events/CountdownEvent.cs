@@ -10,7 +10,7 @@ public class CountdownEvent : IDisposable
 {
     private delegate nint CountdownTimerHookDelegate(ulong a1);
     
-    [Signature("48 89 5C 24 ?? 57 48 83 EC ?? 8B 41 ?? 48 8B D9 89 41", DetourName = nameof(OnCountdownTimer))]
+    [Signature("40 53 48 83 EC 40 80 79 38 00", DetourName = nameof(OnCountdownTimer))]
     private readonly Hook<CountdownTimerHookDelegate>? _countdownTimerHook = null;
     
     private bool _countdownStartPlayed = false;
