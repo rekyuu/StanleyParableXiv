@@ -516,7 +516,9 @@ public class AudioPlayer : IDisposable
             }
         }
     }
-
+    /// <summary>
+    /// Updates the volume of the output mixer.
+    /// </summary>
     public void UpdateVolume()
     {
         if (!_isInitialized || _sampleProvider == null) return;
@@ -525,6 +527,9 @@ public class AudioPlayer : IDisposable
 
         try
         {
+            // Updates the volume using the FFXIV configured volume.
+            // Takes the configured volume source and multiplies it by the master volume amount.
+            // Additionally adds volume boost before applying the master volume multiplier.
             if (Configuration.Instance.BindToXivVolumeSource)
             {
                 uint baseVolume = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);
@@ -534,6 +539,7 @@ public class AudioPlayer : IDisposable
                 targetVolume = baseVolume == 0 ? 0 : 
                     Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
             }
+            // Updates the volume from the configured volume amount.
             else
             {
                 targetVolume = Math.Clamp(Configuration.Instance.Volume, 0, 100) / 100f;
