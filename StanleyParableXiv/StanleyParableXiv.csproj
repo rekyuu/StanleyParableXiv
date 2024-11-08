@@ -22,12 +22,12 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DalamudLibPath>/home/cubelord/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+    <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   
    <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
-    <DalamudLibPath>/home/cubelord/.xlcore/dalamud/Hooks/dev/</DalamudLibPath>
+    <DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
   </PropertyGroup>
   
    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
