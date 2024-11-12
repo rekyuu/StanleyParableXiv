@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Setup .NET
@@ -34,7 +34,7 @@ jobs:
           Compress-Archive -Path assets\mp3\* -DestinationPath assets-mp3.zip
           Compress-Archive -Path assets\ogg\* -DestinationPath assets-ogg.zip
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v4
         with:
           path: |
             ./StanleyParableXiv/bin/x64/Release/*
