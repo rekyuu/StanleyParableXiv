@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           submodules: true
       - name: Setup .NET
@@ -28,7 +28,7 @@ jobs:
       - name: Archive
         run: Compress-Archive -Path StanleyParableXiv/bin/x64/Release/* -DestinationPath StanleyParableXiv.zip
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v2.2.1
+        uses: actions/upload-artifact@v4
         with:
           path: |
             ./StanleyParableXiv/bin/x64/Release/*
