@@ -7,7 +7,7 @@ using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Game.Network;
 using Dalamud.Plugin.Services;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
 
@@ -186,10 +186,10 @@ public class DutyEvent : IDisposable
             DalamudService.Condition[ConditionFlag.BoundByDuty95];
         
         // Ignore Island Sanctuary
-        _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>()?.GetRow(DalamudService.ClientState.TerritoryType);
-        isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse != 49;
+        _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>().GetRow(DalamudService.ClientState.TerritoryType);
+        isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse.RowId != 49;
         _isInIgnoredTerritory = _territoriesToIgnore.Contains(_currentTerritory?.RowId);
-        bool isNextInAllowedContentType = _allowedContentTypes.Contains(_currentTerritory?.ContentFinderCondition?.Value?.ContentType?.Value?.RowId);
+        bool isNextInAllowedContentType = _allowedContentTypes.Contains(_currentTerritory?.ContentFinderCondition.Value.ContentType.Value.RowId);
         
         // Consider duty failed if it wasn't completed before leaving duty
         if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInIgnoredTerritory && _isInAllowedContentType && Configuration.Instance.EnableDutyFailedEvent)
@@ -219,7 +219,7 @@ public class DutyEvent : IDisposable
         foreach (IPartyMember partyMember in DalamudService.PartyList)
         {
             // Skip if they're not in the same instance
-            if (_currentTerritory != partyMember.Territory.GameData) continue;
+            if (!partyMember.Territory.ValueNullable.Equals(_currentTerritory)) continue;
             
             uint objId = partyMember.ObjectId;
             _partyStatus.TryAdd(objId, null);
@@ -230,9 +230,9 @@ public class DutyEvent : IDisposable
             IPlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
             if (player == null) continue;
             
-            OnlineStatus? onlineStatus = player.OnlineStatus.GameData;
+            OnlineStatus? onlineStatus = player.OnlineStatus.ValueNullable;
             
-            if (onlineStatus != null) nextStatus = onlineStatus.RowId;
+            if (onlineStatus != null) nextStatus = player.OnlineStatus.RowId;
             if (nextStatus == lastStatus) continue;
             
             _partyStatus[objId] = nextStatus;

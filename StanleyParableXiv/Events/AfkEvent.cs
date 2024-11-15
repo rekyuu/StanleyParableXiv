@@ -22,7 +22,7 @@ public class AfkEvent : IDisposable
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        bool isAfk = DalamudService.ClientState.LocalPlayer?.OnlineStatus.Id == 17;
+        bool isAfk = DalamudService.ClientState.LocalPlayer?.OnlineStatus.RowId == 17;
         bool isInCutscene = DalamudService.Condition[ConditionFlag.OccupiedInCutSceneEvent];
 
         if (isAfk && !isInCutscene && Configuration.Instance.EnableAfkEvent)

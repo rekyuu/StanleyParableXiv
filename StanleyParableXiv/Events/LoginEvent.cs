@@ -46,7 +46,7 @@ public class LoginEvent : IDisposable
         _loginReady = true;
     }
 
-    private void OnLogout()
+    private void OnLogout(int type, int code)
     {
         _loginReady = false;
         _hasLoggedIn = false;

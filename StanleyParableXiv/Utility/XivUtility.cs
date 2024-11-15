@@ -4,7 +4,7 @@ using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Common.Configuration;
 using Lumina.Data;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Utility;
@@ -86,11 +86,11 @@ public static class XivUtility
     public static bool TerritoryIsHighEndDuty(ushort territoryType)
     {
         string name = DalamudService.DataManager.Excel
-            .GetSheet<TerritoryType>(Language.English)!
-            .GetRow(territoryType)!
-            .ContentFinderCondition.Value!
+            .GetSheet<TerritoryType>(Language.English)
+            .GetRow(territoryType)
+            .ContentFinderCondition.Value
             .Name
-            .RawString;
+            .ToString();
 
         bool isHighEndDuty = name.StartsWith("the Minstrel's Ballad")
             || name.EndsWith("(Unreal)")

@@ -2,7 +2,7 @@ using System;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Utility;
-using Lumina.Excel.GeneratedSheets;
+using Lumina.Excel.Sheets;
 using StanleyParableXiv.Services;
 
 namespace StanleyParableXiv.Events;
@@ -17,7 +17,7 @@ public class SynthesisFailedEvent : IDisposable
     /// </summary>
     public SynthesisFailedEvent()
     {
-        _synthesisFailedMessage = DalamudService.DataManager.GetExcelSheet<LogMessage>()!.GetRow(1160)!.Text.ToDalamudString().TextValue;
+        _synthesisFailedMessage = DalamudService.DataManager.GetExcelSheet<LogMessage>().GetRow(1160).Text.ToDalamudString().TextValue;
 
         DalamudService.ChatGui.ChatMessage += OnChatMessage;
     }
