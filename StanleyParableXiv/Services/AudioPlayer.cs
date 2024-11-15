@@ -44,22 +44,38 @@ public enum AudioEvent
 
 public class AudioPlayer : IDisposable
 {
-    public static AudioPlayer Instance { get; } = new();
-    
-    private readonly IWavePlayer _outputDevice;
-    private readonly VolumeSampleProvider _sampleProvider;
-    private readonly MixingSampleProvider _mixer;
+    private static readonly object InitLock = new();
+    private static AudioPlayer? _instance;
+    public static AudioPlayer Instance 
+    {
+        get
+        {
+            if (_instance == null)
+            {
+                lock (InitLock)
+                {
+                    _instance ??= new AudioPlayer();
+                }
+            }
+            return _instance;
+        }
+    }
+
+    private IWavePlayer? _outputDevice;
+    private VolumeSampleProvider? _sampleProvider;
+    private MixingSampleProvider? _mixer;
+    private bool _isInitialized;
 
     private float _originalVolume;
     private float _killingSpreeVolume;
     
-    private bool _isPlaying = false;
-    private bool _adviceFollowUp = false;
-    private bool _shrimpFactFollowUp = false;
+    private bool _isPlaying;
+    private bool _adviceFollowUp;
+    private bool _shrimpFactFollowUp;
     private string _lastPlayedClip = "";
     private readonly Dictionary<AudioEvent, string> _lastPlayedByEvent = new();
-
     private readonly object _lockObj = new();
+
     
     private readonly Dictionary<AudioEvent, string[]> _audioEventMap = new()
     {
@@ -447,34 +463,66 @@ public class AudioPlayer : IDisposable
     /// Service used for playing audio files from the Resources folder.
     /// Audio mixer implementation referenced from https://github.com/Roselyyn/EldenRingDalamud
     /// </summary>
-    public AudioPlayer()
+     private AudioPlayer()
     {
-        _outputDevice = new WaveOutEvent();
-        _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
+        InitializeAudioDevice();
+    }
+
+    private void InitializeAudioDevice()
+    {
+        try
         {
-            ReadFully = true
-        };
-        _sampleProvider = new VolumeSampleProvider(_mixer);
+            // Try WaveOut first
+            _outputDevice = new WaveOutEvent();
+            _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
+            {
+                ReadFully = true
+            };
+            _sampleProvider = new VolumeSampleProvider(_mixer);
 
-        _mixer.MixerInputEnded += OnMixerInputEnded;
-        
-        _outputDevice.Init(_sampleProvider);
-        _outputDevice.Play();
-        
-        UpdateVolume();
+            _mixer.MixerInputEnded += OnMixerInputEnded;
+            _outputDevice.Init(_sampleProvider);
+            _outputDevice.Play();
+            _isInitialized = true;
+
+            UpdateVolume();
+        }
+        catch (Exception ex)
+        {
+            DalamudService.Log.Error(ex, "Failed to initialize primary audio device, attempting fallback");
+            
+            try
+            {
+                // Fallback to DirectSound
+                _outputDevice?.Dispose();
+                _outputDevice = new DirectSoundOut();
+                _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
+                {
+                    ReadFully = true
+                };
+                _sampleProvider = new VolumeSampleProvider(_mixer);
+
+                _mixer.MixerInputEnded += OnMixerInputEnded;
+                _outputDevice.Init(_sampleProvider);
+                _outputDevice.Play();
+                _isInitialized = true;
+
+                UpdateVolume();
+            }
+            catch (Exception fallbackEx)
+            {
+                DalamudService.Log.Error(fallbackEx, "Failed to initialize fallback audio device");
+                _isInitialized = false;
+            }
+        }
     }
-
-    public void Dispose()
-    {
-        _outputDevice.Dispose();
-        GC.SuppressFinalize(this);
-    }
-
     /// <summary>
     /// Updates the volume of the output mixer.
     /// </summary>
     public void UpdateVolume()
     {
+        if (!_isInitialized || _sampleProvider == null) return;
+
         float targetVolume = 0.5f;
 
         try
@@ -488,8 +536,8 @@ public class AudioPlayer : IDisposable
                 uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
                 uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
 
-                if (baseVolume == 0) targetVolume = 0;
-                else targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
+                targetVolume = baseVolume == 0 ? 0 : 
+                    Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
             }
             // Updates the volume from the configured volume amount.
             else
@@ -501,12 +549,9 @@ public class AudioPlayer : IDisposable
         {
             DalamudService.Log.Error(ex, "Exception was thrown while setting volume");
         }
-        finally
-        {
-            DalamudService.Log.Debug("Setting volume to {TargetVolume}", targetVolume);
-            _sampleProvider.Volume = targetVolume;
-        }
 
+        DalamudService.Log.Debug("Setting volume to {TargetVolume}", targetVolume);
+        _sampleProvider.Volume = targetVolume;
         _originalVolume = _sampleProvider.Volume;
         _killingSpreeVolume = _sampleProvider.Volume * 0.70f;
     }
@@ -517,6 +562,8 @@ public class AudioPlayer : IDisposable
     /// <param name="event">The event category.</param>
     public void PlayRandomSoundFromCategory(AudioEvent @event)
     {
+        if (!_isInitialized) return;
+
         lock (_lockObj)
         {
             if (_isPlaying) return;
@@ -554,7 +601,7 @@ public class AudioPlayer : IDisposable
     /// <param name="resourcePath">The path of the file to play.</param>
     public void PlaySound(string resourcePath)
     {
-        if (_isPlaying) return;
+        if (!_isInitialized || _isPlaying || _mixer == null) return;
 
         string audioPath = GetFilepathForResource(resourcePath);
         DalamudService.Log.Debug("Attempting to play {AudioPath}", audioPath);
@@ -627,5 +674,11 @@ public class AudioPlayer : IDisposable
             PlayRandomSoundFromCategory(AudioEvent.Advice);
             _adviceFollowUp = false;
         }
+    }
+     public void Dispose()
+    {
+        _outputDevice?.Dispose();
+        _instance = null;
+        GC.SuppressFinalize(this);
     }
 }
