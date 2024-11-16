@@ -16,6 +16,7 @@ namespace StanleyParableXiv.Events;
 public class DutyEvent : IDisposable
 {
     private TerritoryType? _currentTerritory;
+    private bool _isLoggedIn = false;
     private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
     private bool _isInIgnoredTerritory = false;
@@ -52,9 +53,15 @@ public class DutyEvent : IDisposable
         DalamudService.DutyState.DutyCompleted += OnDutyCompleted;
         DalamudService.ClientState.EnterPvP += OnEnterPvP;
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
+        DalamudService.ClientState.Login += OnLogin;
+        DalamudService.ClientState.Logout += OnLogout;
         DalamudService.Framework.Update += OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
     }
+
+    private void OnLogin() => _isLoggedIn = true;
+
+    private void OnLogout(int type, int code) => _isLoggedIn = false;
 
     public void Dispose()
     {
@@ -63,6 +70,8 @@ public class DutyEvent : IDisposable
         DalamudService.DutyState.DutyCompleted -= OnDutyCompleted;
         DalamudService.ClientState.EnterPvP -= OnEnterPvP;
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
+        DalamudService.ClientState.Login -= OnLogin;
+        DalamudService.ClientState.Logout -= OnLogout;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
         DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
         
@@ -181,12 +190,19 @@ public class DutyEvent : IDisposable
         
     private void CheckIfPlayerIsBoundByDuty()
     {
+        if (!_isLoggedIn) return;
+
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
             DalamudService.Condition[ConditionFlag.BoundByDuty95];
         
         // Ignore Island Sanctuary
-        _currentTerritory = DalamudService.DataManager.Excel.GetSheet<TerritoryType>().GetRow(DalamudService.ClientState.TerritoryType);
+        bool currentTerritoryExists = DalamudService.DataManager.Excel
+            .GetSheet<TerritoryType>()
+            .TryGetRow(DalamudService.ClientState.TerritoryType, out TerritoryType currentTerritory);
+        if (!currentTerritoryExists) return;
+
+        _currentTerritory = currentTerritory;
         isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse.RowId != 49;
         _isInIgnoredTerritory = _territoriesToIgnore.Contains(_currentTerritory?.RowId);
         bool isNextInAllowedContentType = _allowedContentTypes.Contains(_currentTerritory?.ContentFinderCondition.Value.ContentType.Value.RowId);

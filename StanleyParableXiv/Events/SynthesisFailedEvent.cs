@@ -9,7 +9,7 @@ namespace StanleyParableXiv.Events;
 
 public class SynthesisFailedEvent : IDisposable
 {
-    private readonly string _synthesisFailedMessage;
+    private readonly string? _synthesisFailedMessage;
     
     /// <summary>
     /// Fires an event on crafting failure.
@@ -17,7 +17,8 @@ public class SynthesisFailedEvent : IDisposable
     /// </summary>
     public SynthesisFailedEvent()
     {
-        _synthesisFailedMessage = DalamudService.DataManager.GetExcelSheet<LogMessage>().GetRow(1160).Text.ToDalamudString().TextValue;
+        bool rowExists = DalamudService.DataManager.GetExcelSheet<LogMessage>().TryGetRow(1160, out LogMessage message);
+        if (rowExists) _synthesisFailedMessage = message.Text.ToDalamudString().TextValue;
 
         DalamudService.ChatGui.ChatMessage += OnChatMessage;
     }
@@ -30,6 +31,8 @@ public class SynthesisFailedEvent : IDisposable
 
     private void OnChatMessage(XivChatType type, int timestamp, ref SeString sender, ref SeString message, ref bool ishandled)
     {
+        if (string.IsNullOrEmpty(_synthesisFailedMessage)) return;
+
         if (message.TextValue.Contains(_synthesisFailedMessage) && Configuration.Instance.EnableSynthesisFailedEvent)
         {
             AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);

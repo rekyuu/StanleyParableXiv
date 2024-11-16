@@ -470,6 +470,12 @@ public class AudioPlayer : IDisposable
         GC.SuppressFinalize(this);
     }
 
+    public static float GetBoundVolume(uint baseVolume, uint masterVolume, uint baseVolumeBoost)
+    {
+        if (baseVolume == 0) return 0;
+        return Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
+    }
+
     /// <summary>
     /// Updates the volume of the output mixer.
     /// </summary>
@@ -488,8 +494,7 @@ public class AudioPlayer : IDisposable
                 uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
                 uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
 
-                if (baseVolume == 0) targetVolume = 0;
-                else targetVolume = Math.Clamp((baseVolume + baseVolumeBoost) * (masterVolume / 100f), 0, 100) / 100f;
+                targetVolume = GetBoundVolume(baseVolume, masterVolume, baseVolumeBoost);
             }
             // Updates the volume from the configured volume amount.
             else

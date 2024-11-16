@@ -85,9 +85,13 @@ public static class XivUtility
     /// <returns>True if high-end, false otherwise.</returns>
     public static bool TerritoryIsHighEndDuty(ushort territoryType)
     {
-        string name = DalamudService.DataManager.Excel
+        bool territoryExists = DalamudService.DataManager.Excel
             .GetSheet<TerritoryType>(Language.English)
-            .GetRow(territoryType)
+            .TryGetRow(territoryType, out TerritoryType territory);
+
+        if (!territoryExists) return false;
+
+        string name = territory
             .ContentFinderCondition.Value
             .Name
             .ToString();

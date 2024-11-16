@@ -414,6 +414,21 @@ public class ConfigurationWindow : Window, IDisposable
                     Configuration.Instance.EnableDebugLogging = enableDebugLogging;
                     Configuration.Instance.Save();
                 }
+
+                if (Configuration.Instance.BindToXivVolumeSource)
+                {
+                    uint baseVolume = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);
+                    uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
+                    uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
+                    float targetVolume = AudioPlayer.GetBoundVolume(baseVolume, masterVolume, baseVolumeBoost);
+
+                    ImGui.Separator();
+
+                    ImGui.Text($"{Enum.GetName(Configuration.Instance.XivVolumeSource)} (a) = {baseVolume}, Master (m) = {masterVolume}, Boost (b) = {baseVolumeBoost}");
+                    ImGui.Text("Volume = (a + b) \u00d7 (m / 100)");
+                    ImGui.Text($"{targetVolume * 100f:0.00} = ({baseVolume} + {baseVolumeBoost}) \u00d7 ({masterVolume} / 100)");
+                }
+
                 ImGui.PopID();
 
                 ImGui.EndTabItem();
