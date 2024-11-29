@@ -29,7 +29,7 @@ public class AfkEvent : IDisposable
         {
             if (_afkPlayed) return;
             
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
+            AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Afk);
             _afkPlayed = true;
         }
         else _afkPlayed = false;

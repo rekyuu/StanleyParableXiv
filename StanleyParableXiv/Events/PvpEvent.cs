@@ -74,7 +74,7 @@ public class PvpEvent : IDisposable
         {
             Task.Delay(5000).ContinueWith(_ =>
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpPrepare);
+                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpPrepare);
             });
         }
     }
@@ -176,7 +176,7 @@ public class PvpEvent : IDisposable
             if (chat) DalamudService.ChatGui.Print($"{killerName} drew first blood by killing {killedName}!");
             if (Configuration.Instance.EnablePvpFirstBloodEvent)
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.FirstBlood);
+                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.FirstBlood);
             }
         }
 
@@ -204,19 +204,19 @@ public class PvpEvent : IDisposable
                 break;
             case 2:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} got a double kill!");
-                if (multikills) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill2);
+                if (multikills) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill2);
                 break;
             case 3:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} has a TRIPLE kill!");
-                if (multikills) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill3);
+                if (multikills) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill3);
                 break;
             case 4:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} earned an ULTRA KILL!");
-                if (multikills) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill4);
+                if (multikills) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill4);
                 break;
             default:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} IS ON A RAMPAGE!!");
-                if (multikills) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill5);
+                if (multikills) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Multikill5);
                 break;
         }
         
@@ -241,35 +241,35 @@ public class PvpEvent : IDisposable
                 break;
             case 3:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is on a killing spree!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak3);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak3);
                 break;
             case 4:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is dominating!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak4);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak4);
                 break;
             case 5:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is on a mega kill streak!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak5);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak5);
                 break;
             case 6:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is unstoppable!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak6);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak6);
                 break;
             case 7:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is wicked sick!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak7);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak7);
                 break;
             case 8:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is on a monster kill streak!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak8);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak8);
                 break;
             case 9:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is GODLIKE!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak9);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak9);
                 break;
             default:
                 if (chat) DalamudService.ChatGui.Print($"{killerName} is beyond GODLIKE, somebody stop them!!");
-                if (killStreaks) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak10);
+                if (killStreaks) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.KillStreak10);
                 break;
         }
 

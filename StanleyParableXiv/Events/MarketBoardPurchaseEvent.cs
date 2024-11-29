@@ -25,7 +25,7 @@ public class MarketBoardPurchaseEvent : IDisposable
 
         if (Configuration.Instance.EnableMarketBoardPurchaseEvent)
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
+            AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.MarketBoardPurchase);
         }
         
         // Don't spam the user for multiple purchases

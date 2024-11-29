@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using NAudio.Wave.SampleProviders;
 using StanleyParableXiv.Utility;
@@ -42,13 +44,27 @@ public enum AudioEvent
     Wipe
 }
 
-public class AudioPlayer : IDisposable
+public enum OutputType
 {
-    public static AudioPlayer Instance { get; } = new();
-    
-    private readonly IWavePlayer _outputDevice;
-    private readonly VolumeSampleProvider _sampleProvider;
-    private readonly MixingSampleProvider _mixer;
+    WaveOut,
+    DirectSound,
+    Asio,
+    Wasapi
+}
+
+public class AudioService : IDisposable
+{
+    public static AudioService Instance { get; } = new();
+
+    public Dictionary<string, Guid> DirectOutAudioDevices = [];
+    public List<string> AsioAudioDevices = [];
+    public Dictionary<string, string> WasapiAudioDevices = [];
+
+    public string? OutputDeviceFailureException = null;
+
+    private readonly VolumeSampleProvider? _sampleProvider;
+    private readonly MixingSampleProvider? _mixer;
+    private IWavePlayer? _outputDevice;
 
     private float _originalVolume;
     private float _killingSpreeVolume;
@@ -447,27 +463,95 @@ public class AudioPlayer : IDisposable
     /// Service used for playing audio files from the Resources folder.
     /// Audio mixer implementation referenced from https://github.com/Roselyyn/EldenRingDalamud
     /// </summary>
-    public AudioPlayer()
+    public AudioService()
     {
-        _outputDevice = new WaveOutEvent();
         _mixer = new MixingSampleProvider(WaveFormat.CreateIeeeFloatWaveFormat(44100, 2))
         {
             ReadFully = true
         };
         _sampleProvider = new VolumeSampleProvider(_mixer);
-
         _mixer.MixerInputEnded += OnMixerInputEnded;
-        
-        _outputDevice.Init(_sampleProvider);
-        _outputDevice.Play();
-        
+
+        InitializeOutputDevice();
+        UpdateAudioDevices();
         UpdateVolume();
     }
 
     public void Dispose()
     {
-        _outputDevice.Dispose();
+        _outputDevice?.Dispose();
+        if (_mixer != null) _mixer.MixerInputEnded -= OnMixerInputEnded;
+
         GC.SuppressFinalize(this);
+    }
+
+    public void InitializeOutputDevice()
+    {
+        _outputDevice?.Dispose();
+        OutputDeviceFailureException = null;
+
+        DalamudService.Log.Debug("Initializing audio device using {Type}", Configuration.Instance.OutputType);
+
+        try
+        {
+            // https://github.com/naudio/NAudio/blob/master/Docs/EnumerateOutputDevices.md
+            _outputDevice = Configuration.Instance.OutputType switch
+            {
+                // WaveOut device selection will likely never be supported since it, for some reason,
+                // requires WinForms libraries. It will select the default audio device instead.
+                OutputType.WaveOut => new WaveOutEvent(),
+                OutputType.DirectSound when Configuration.Instance.DirectOutDevice == Guid.Empty => new DirectSoundOut(),
+                OutputType.DirectSound => new DirectSoundOut(Configuration.Instance.DirectOutDevice),
+                OutputType.Asio when string.IsNullOrEmpty(Configuration.Instance.AsioDevice) => new AsioOut(),
+                OutputType.Asio when Configuration.Instance.AsioDevice == "Default" => new AsioOut(),
+                OutputType.Asio => new AsioOut(Configuration.Instance.AsioDevice),
+                OutputType.Wasapi when string.IsNullOrEmpty(Configuration.Instance.WasapiDevice) => new WasapiOut(),
+                OutputType.Wasapi => new WasapiOut(GetWasapiAudioDevice(Configuration.Instance.WasapiDevice), AudioClientShareMode.Shared, true, 200),
+                _ => throw new ArgumentOutOfRangeException()
+            };
+
+            _outputDevice.Init(_sampleProvider);
+            _outputDevice.Play();
+        }
+        catch (Exception ex)
+        {
+            OutputDeviceFailureException = ex.Message;
+        }
+    }
+
+    public void UpdateAudioDevices()
+    {
+        DirectOutAudioDevices = new Dictionary<string, Guid> {{"Default", Guid.Empty}};
+        foreach (DirectSoundDeviceInfo? device in DirectSoundOut.Devices)
+        {
+            DirectOutAudioDevices.TryAdd(device.Description, device.Guid);
+        }
+
+        AsioAudioDevices = ["Default"];
+        foreach (string device in AsioOut.GetDriverNames())
+        {
+            AsioAudioDevices.Add(device);
+        }
+
+        WasapiAudioDevices = new Dictionary<string, string> {{"Default", ""}};
+        MMDeviceEnumerator enumerator = new();
+        foreach (MMDevice? device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+        {
+            if (device == null) continue;
+            WasapiAudioDevices.TryAdd($"{device.FriendlyName}", device.ID);
+        }
+    }
+
+    private MMDevice? GetWasapiAudioDevice(string id)
+    {
+        MMDeviceEnumerator enumerator = new();
+        foreach (MMDevice? device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+        {
+            if (device == null) continue;
+            if (device.ID == id) return device;
+        }
+
+        return null;
     }
 
     public static float GetBoundVolume(uint baseVolume, uint masterVolume, uint baseVolumeBoost)
@@ -506,14 +590,14 @@ public class AudioPlayer : IDisposable
         {
             DalamudService.Log.Error(ex, "Exception was thrown while setting volume");
         }
-        finally
-        {
-            DalamudService.Log.Debug("Setting volume to {TargetVolume}", targetVolume);
-            _sampleProvider.Volume = targetVolume;
-        }
 
-        _originalVolume = _sampleProvider.Volume;
-        _killingSpreeVolume = _sampleProvider.Volume * 0.70f;
+        if (_sampleProvider == null) return;
+
+        DalamudService.Log.Debug("Setting volume to {TargetVolume}", targetVolume);
+        _sampleProvider.Volume = targetVolume;
+
+        _originalVolume = _sampleProvider?.Volume ?? 0.5f;
+        _killingSpreeVolume = _sampleProvider?.Volume * 0.70f ?? 0.5f;
     }
     
     /// <summary>
@@ -522,13 +606,14 @@ public class AudioPlayer : IDisposable
     /// <param name="event">The event category.</param>
     public void PlayRandomSoundFromCategory(AudioEvent @event)
     {
+        if (_sampleProvider == null) return;
+
         lock (_lockObj)
         {
             if (_isPlaying) return;
         
             string lastPlayed = "";
-            if (!_lastPlayedByEvent.ContainsKey(@event)) _lastPlayedByEvent[@event] = lastPlayed;
-            else lastPlayed = _lastPlayedByEvent[@event];
+            if (!_lastPlayedByEvent.TryAdd(@event, lastPlayed)) lastPlayed = _lastPlayedByEvent[@event];
 
             Random random = new();
             string[] choices = _audioEventMap[@event].Where(x => x != lastPlayed).ToArray();
@@ -559,6 +644,7 @@ public class AudioPlayer : IDisposable
     /// <param name="resourcePath">The path of the file to play.</param>
     public void PlaySound(string resourcePath)
     {
+        if (_sampleProvider == null || _mixer == null) return;
         if (_isPlaying) return;
 
         string audioPath = GetFilepathForResource(resourcePath);
@@ -598,7 +684,7 @@ public class AudioPlayer : IDisposable
     private ISampleProvider ConvertToCorrectChannelCount(ISampleProvider input)
     {
         int inputChannels = input.WaveFormat.Channels;
-        int mixerChannels = _mixer.WaveFormat.Channels;
+        int? mixerChannels = _mixer?.WaveFormat.Channels;
         
         if (inputChannels == mixerChannels) return input;
         if (inputChannels == 1 && mixerChannels == 2)
@@ -611,6 +697,7 @@ public class AudioPlayer : IDisposable
 
     private void OnMixerInputEnded(object? sender, SampleProviderEventArgs e)
     {
+        if (_sampleProvider == null) return;
         _isPlaying = false;
         
         // Restore fix killing spree lines being louder than others

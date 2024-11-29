@@ -78,7 +78,7 @@ public sealed class Plugin : IDalamudPlugin
         DalamudService.Log.Information("Disposing plugin");
             
         _eventService.Dispose();
-        AudioPlayer.Instance.Dispose();
+        AudioService.Instance.Dispose();
             
         _windowSystem.RemoveAllWindows();
         DalamudService.CommandManager.RemoveHandler("/narrator");
@@ -124,7 +124,7 @@ public sealed class Plugin : IDalamudPlugin
             Configuration.Instance.BindToXivVolumeSource = false;
             Configuration.Instance.Save();
             
-            AudioPlayer.Instance.UpdateVolume();
+            AudioService.Instance.UpdateVolume();
                 
             DalamudService.ChatGui.Print($"Narrator volume set to {volumeSetting}.");
         }
@@ -153,7 +153,7 @@ public sealed class Plugin : IDalamudPlugin
         if (_lastXivVolumeSource == nextVolumeSource && _lastXivMasterVolume == nextMasterVolume) return;
             
         DalamudService.Log.Debug("Updating volume due to framework update");
-        AudioPlayer.Instance.UpdateVolume();
+        AudioService.Instance.UpdateVolume();
             
         _lastXivVolumeSource = nextVolumeSource;
         _lastXivMasterVolume = nextMasterVolume;

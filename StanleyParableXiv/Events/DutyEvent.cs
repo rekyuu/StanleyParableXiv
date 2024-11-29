@@ -89,7 +89,7 @@ public class DutyEvent : IDisposable
 
         if (!Configuration.Instance.EnableDutyStartEvent) return;
         
-        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
+        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterStart);
     }
 
     private static void OnDutyWiped(object? sender, ushort e)
@@ -100,7 +100,7 @@ public class DutyEvent : IDisposable
         
         Task.Delay(1000).ContinueWith(_ =>
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
+            AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Wipe);
         });
     }
 
@@ -145,14 +145,14 @@ public class DutyEvent : IDisposable
 
                 if (Configuration.Instance.EnablePvpCountdownStartEvent)
                 {
-                    AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
                 }
 
                 if (Configuration.Instance.EnablePvpCountdown10Event)
                 {
                     Task.Delay(20_000).ContinueWith(_ =>
                     {
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
                     });
                 }
 
@@ -166,7 +166,7 @@ public class DutyEvent : IDisposable
                 {
                     Task.Delay(3000).ContinueWith(_ =>
                     {
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
                     });
                 }
 
@@ -180,7 +180,7 @@ public class DutyEvent : IDisposable
                 {
                     Task.Delay(3000).ContinueWith(_ =>
                     {
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
                     });
                 }
 
@@ -210,7 +210,7 @@ public class DutyEvent : IDisposable
         // Consider duty failed if it wasn't completed before leaving duty
         if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInIgnoredTerritory && _isInAllowedContentType && Configuration.Instance.EnableDutyFailedEvent)
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+            AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
 
         _isBoundByDuty = isNextBoundByDuty;
@@ -260,12 +260,12 @@ public class DutyEvent : IDisposable
             // Assume the player went offline (or left the instance)
             if (nextStatus == null && Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
             }
             // Assume the player reconnected
             else if (lastStatus == null && Configuration.Instance.EnableDutyPlayerReconnectedEvent)
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
             }
         }
     }
@@ -299,40 +299,40 @@ public class DutyEvent : IDisposable
                 switch (Configuration.Instance.CompletedHighEndDuties[territory])
                 {
                     case 15:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_15.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_15.mp3");
                         break;
                     case 20:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_20.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_20.mp3");
                         break;
                     case 30:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_30.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_30.mp3");
                         break;
                     case 50:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_50.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_50.mp3");
                         break;
                     case 69:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_69.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_69.mp3");
                         break;
                     case 70:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_70.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_70.mp3");
                         break;
                     case 71:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_71.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_71.mp3");
                         break;
                     case 85:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_85.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_85.mp3");
                         break;
                     case 90:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_90.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_90.mp3");
                         break;
                     case 99:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_99.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_99.mp3");
                         break;
                     case 100:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_100.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_100.mp3");
                         break;
                     case 101:
-                        AudioPlayer.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_101.mp3");
+                        AudioService.Instance.PlaySound("announcer_dlc_stanleyparable_killing_spree/announcer_kill_limit_101.mp3");
                         break;
                 }
             }
@@ -342,7 +342,7 @@ public class DutyEvent : IDisposable
         {
             Task.Delay(1000).ContinueWith(_ =>
             {
-                AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
+                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
             });
         }
     }
