@@ -38,7 +38,7 @@ public class CountdownEvent : IDisposable
             
         float countdownValue = Marshal.PtrToStructure<float>((IntPtr)value + 0x2c);
         
-        DalamudService.Log.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
+        // DalamudService.Log.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
 
         // Reset on countdown completion
         if (countdownValue <= 0f)
