@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Conditions;
-using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
@@ -34,6 +33,7 @@ public class DutyEvent : IDisposable
     private readonly uint?[] _ignoredTerritories = 
     {
         653, // Company Workshop
+        941, // Triple Triad Invitational Parlor
     };
 
     private readonly uint?[] _ignoredIntendedUses =
@@ -114,6 +114,7 @@ public class DutyEvent : IDisposable
                                  DalamudService.Condition[ConditionFlag.BoundByDuty95];
 
         if (!isNextBoundByDuty) _partyMembers = [];
+        else _dutyStarted = true; // In case of a player restarting their game while in instance, etc... probably
 
         // Consider duty failed if it wasn't completed before leaving duty
         if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !TerritoryIsValidDuty() && Configuration.Instance.EnableDutyFailedEvent)
