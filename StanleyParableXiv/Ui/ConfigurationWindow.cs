@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using Dalamud.Interface.Components;
 using Dalamud.Interface.Windowing;
 using ImGuiNET;
-using NAudio.CoreAudioApi;
 using StanleyParableXiv.Services;
 using StanleyParableXiv.Utility;
 
