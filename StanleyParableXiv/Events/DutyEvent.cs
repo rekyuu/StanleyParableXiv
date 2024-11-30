@@ -243,7 +243,6 @@ public class DutyEvent : IDisposable
             uint? nextStatus = null;
             uint? lastStatus = _partyStatus[objId];
 
-            DalamudService.Log.Debug("Checking ObjectTable in DutyEvent");
             IPlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
             if (player == null) continue;
             
