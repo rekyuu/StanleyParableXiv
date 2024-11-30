@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Dalamud.Game.ClientState.Conditions;
 using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.ClientState.Party;
-using Dalamud.Game.Network;
 using Dalamud.Plugin.Services;
 using Lumina.Excel.Sheets;
 using StanleyParableXiv.Services;
@@ -17,7 +16,6 @@ public class DutyEvent : IDisposable
 {
     private TerritoryType? _currentTerritory;
     private bool _isLoggedIn = false;
-    private bool _isInPvp = false;
     private bool _isBoundByDuty = false;
     private bool _isInIgnoredTerritory = false;
     private bool _isInAllowedContentType = false;
@@ -51,12 +49,9 @@ public class DutyEvent : IDisposable
         DalamudService.DutyState.DutyStarted += OnDutyStarted;
         DalamudService.DutyState.DutyWiped += OnDutyWiped;
         DalamudService.DutyState.DutyCompleted += OnDutyCompleted;
-        DalamudService.ClientState.EnterPvP += OnEnterPvP;
-        DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.ClientState.Login += OnLogin;
         DalamudService.ClientState.Logout += OnLogout;
         DalamudService.Framework.Update += OnFrameworkUpdate;
-        DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
     }
 
     private void OnLogin() => _isLoggedIn = true;
@@ -68,22 +63,20 @@ public class DutyEvent : IDisposable
         DalamudService.DutyState.DutyStarted -= OnDutyStarted;
         DalamudService.DutyState.DutyWiped -= OnDutyWiped;
         DalamudService.DutyState.DutyCompleted -= OnDutyCompleted;
-        DalamudService.ClientState.EnterPvP -= OnEnterPvP;
-        DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.ClientState.Login -= OnLogin;
         DalamudService.ClientState.Logout -= OnLogout;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
-        DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
         
         GC.SuppressFinalize(this);
     }
 
     private void OnDutyStarted(object? sender, ushort e)
     {
-        DalamudService.Log.Debug("OnDutyStarted called");
-        
+        if (DalamudService.ClientState.IsPvPExcludingDen) return;
         if (!_isInAllowedContentType || _isInIgnoredTerritory) return;
-                
+
+        DalamudService.Log.Debug("Duty started");
+
         _dutyStarted = true;
         _dutyCompleted = false;
 
@@ -94,7 +87,7 @@ public class DutyEvent : IDisposable
 
     private static void OnDutyWiped(object? sender, ushort e)
     {
-        DalamudService.Log.Debug("OnDutyWiped called");
+        DalamudService.Log.Debug("Duty wiped");
         
         if (!Configuration.Instance.EnableDutyPartyWipeEvent) return;
         
@@ -106,86 +99,18 @@ public class DutyEvent : IDisposable
 
     private void OnDutyCompleted(object? sender, ushort e)
     {
-        DalamudService.Log.Debug("OnDutyCompleted called");
-        
-        if (_isInPvp) return;
+        if (DalamudService.ClientState.IsPvPExcludingDen) return;
+
+        _dutyCompleted = true;
+
+        DalamudService.Log.Debug("Duty completed");
         PlayDutyCompleteAudio();
-    }
-
-    private void OnEnterPvP()
-    {
-        DalamudService.Log.Debug("OnEnterPvP called");
-        _isInPvp = true;
-    }
-
-    private void OnLeavePvp()
-    {
-        DalamudService.Log.Debug("OnLeavePvp called");
-        _isInPvp = false;
     }
 
     private void OnFrameworkUpdate(IFramework framework)
     {
         CheckIfPlayerIsBoundByDuty();
         CheckPartyMembers();
-    }
-
-    private unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
-        NetworkMessageDirection direction)
-    {
-        ushort cat = *(ushort*)(dataPtr + 0x00);
-        uint updateType = *(uint*)(dataPtr + 0x08);
-        
-        switch (cat)
-        {
-            // Start PvP Countdown
-            case 0x6D when updateType == 0x40000004:
-                _dutyStarted = true;
-                _dutyCompleted = false;
-
-                if (Configuration.Instance.EnablePvpCountdownStartEvent)
-                {
-                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
-                }
-
-                if (Configuration.Instance.EnablePvpCountdown10Event)
-                {
-                    Task.Delay(20_000).ContinueWith(_ =>
-                    {
-                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
-                    });
-                }
-
-                break;
-            // PvP win
-            case 0x355 when updateType == 0x1F4:
-                _dutyStarted = false;
-                _dutyCompleted = true;
-
-                if (Configuration.Instance.EnablePvpWinEvent)
-                {
-                    Task.Delay(3000).ContinueWith(_ =>
-                    {
-                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
-                    });
-                }
-
-                break;
-            // PvP loss
-            case 0x355 when updateType == 0xFA:
-                _dutyStarted = false;
-                _dutyCompleted = true;
-
-                if (Configuration.Instance.EnablePvpLossEvent)
-                {
-                    Task.Delay(3000).ContinueWith(_ =>
-                    {
-                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
-                    });
-                }
-
-                break;
-        }
     }
         
     private void CheckIfPlayerIsBoundByDuty()

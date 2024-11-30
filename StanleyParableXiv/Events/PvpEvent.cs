@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
@@ -30,6 +31,8 @@ public class PvpEvent : IDisposable
         DalamudService.ClientState.EnterPvP += OnEnterPvP;
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.ChatGui.ChatMessage += OnChatMessage;
+        DalamudService.GameNetwork.NetworkMessage += OnGameNetworkMessage;
+        TerritoryService.Instance.TerritoryChanged += OnTerritoryChanged;
     }
 
     public void Dispose()
@@ -37,21 +40,22 @@ public class PvpEvent : IDisposable
         DalamudService.ClientState.EnterPvP -= OnEnterPvP;
         DalamudService.ClientState.LeavePvP -= OnLeavePvp;
         DalamudService.ChatGui.ChatMessage -= OnChatMessage;
-        
+        DalamudService.GameNetwork.NetworkMessage -= OnGameNetworkMessage;
+        TerritoryService.Instance.TerritoryChanged -= OnTerritoryChanged;
+
         GC.SuppressFinalize(this);
     }
 
-    private void OnEnterPvP()
+    private static void OnEnterPvP()
     {
+        if (TerritoryService.Instance.CurrentTerritory == null) return;
         if (!DalamudService.ClientState.IsPvPExcludingDen) return;
 
-        bool currentTerritoryExists = DalamudService.DataManager.Excel
-            .GetSheet<TerritoryType>()
-            .TryGetRow(DalamudService.ClientState.TerritoryType, out TerritoryType currentTerritory);
-        if (!currentTerritoryExists) return;
+        DalamudService.Log.Debug("Entering PvP");
 
         DalamudService.Log.Debug("Current PvP territory: {Name}, RowId: {RowId}",
-            currentTerritory.Name.ToString(), currentTerritory.RowId);
+            TerritoryService.Instance.CurrentTerritory?.Name.ExtractText() ?? string.Empty,
+            TerritoryService.Instance.CurrentTerritory?.RowId ?? 0);
 
         if (Configuration.Instance.EnablePvpPrepareEvent)
         {
@@ -64,6 +68,7 @@ public class PvpEvent : IDisposable
 
     private void OnLeavePvp()
     {
+        DalamudService.Log.Debug("Leaving PvP");
         ResetPvp();
     }
 
@@ -277,6 +282,61 @@ public class PvpEvent : IDisposable
                 DalamudService.ChatGui.Print($"{killerName} ended {killedName}'s beyond GODLIKE streak!");
                 break;
         }
+    }
+
+    private static unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
+        NetworkMessageDirection direction)
+    {
+        ushort cat = *(ushort*)(dataPtr + 0x00);
+        uint updateType = *(uint*)(dataPtr + 0x08);
+
+        switch (cat)
+        {
+            // Start PvP Countdown
+            case 0x6D when updateType == 0x40000004:
+                if (Configuration.Instance.EnablePvpCountdownStartEvent)
+                {
+                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+                }
+
+                if (Configuration.Instance.EnablePvpCountdown10Event)
+                {
+                    Task.Delay(20_000).ContinueWith(_ =>
+                    {
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
+                    });
+                }
+
+                break;
+            // PvP win
+            case 0x355 when updateType == 0x1F4:
+                if (Configuration.Instance.EnablePvpWinEvent)
+                {
+                    Task.Delay(3000).ContinueWith(_ =>
+                    {
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
+                    });
+                }
+
+                break;
+            // PvP loss
+            case 0x355 when updateType == 0xFA:
+                if (Configuration.Instance.EnablePvpLossEvent)
+                {
+                    Task.Delay(3000).ContinueWith(_ =>
+                    {
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+                    });
+                }
+
+                break;
+        }
+    }
+
+    private void OnTerritoryChanged(TerritoryType? territoryType)
+    {
+        if (DalamudService.ClientState.IsPvPExcludingDen) OnEnterPvP();
+        else if (DalamudService.ClientState.IsPvP) OnLeavePvp();
     }
 
     private static bool IsProbablyDead(PlayerPayload playerPayload)
