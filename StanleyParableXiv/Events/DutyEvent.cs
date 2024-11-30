@@ -14,21 +14,12 @@ namespace StanleyParableXiv.Events;
 
 public class DutyEvent : IDisposable
 {
-    private TerritoryType? _currentTerritory;
-    private bool _isLoggedIn = false;
     private bool _isBoundByDuty = false;
-    private bool _isInIgnoredTerritory = false;
-    private bool _isInAllowedContentType = false;
     private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
-    private readonly Dictionary<uint, uint?> _partyStatus = new();
+    private Dictionary<string, uint> _partyMembers = new();
 
-    private readonly uint?[] _territoriesToIgnore = 
-    {
-        653, // Company Workshop
-    };
-
-    private readonly uint?[] _allowedContentTypes = 
+    private readonly uint?[] _allowedContentTypes =
     {
         1,  // Duty Roulette
         2,  // Dungeons
@@ -39,6 +30,16 @@ public class DutyEvent : IDisposable
         28, // Ultimate Raids
         30  // V&C Dungeon Finder
     };
+
+    private readonly uint?[] _ignoredTerritories = 
+    {
+        653, // Company Workshop
+    };
+
+    private readonly uint?[] _ignoredIntendedUses =
+    [
+        49 // Island Sanctuary
+    ];
     
     /// <summary>
     /// Fires various duty instance events.
@@ -49,31 +50,25 @@ public class DutyEvent : IDisposable
         DalamudService.DutyState.DutyStarted += OnDutyStarted;
         DalamudService.DutyState.DutyWiped += OnDutyWiped;
         DalamudService.DutyState.DutyCompleted += OnDutyCompleted;
-        DalamudService.ClientState.Login += OnLogin;
-        DalamudService.ClientState.Logout += OnLogout;
         DalamudService.Framework.Update += OnFrameworkUpdate;
+        TerritoryService.Instance.TerritoryChanged += OnTerritoryChanged;
     }
-
-    private void OnLogin() => _isLoggedIn = true;
-
-    private void OnLogout(int type, int code) => _isLoggedIn = false;
 
     public void Dispose()
     {
         DalamudService.DutyState.DutyStarted -= OnDutyStarted;
         DalamudService.DutyState.DutyWiped -= OnDutyWiped;
         DalamudService.DutyState.DutyCompleted -= OnDutyCompleted;
-        DalamudService.ClientState.Login -= OnLogin;
-        DalamudService.ClientState.Logout -= OnLogout;
         DalamudService.Framework.Update -= OnFrameworkUpdate;
-        
+        TerritoryService.Instance.TerritoryChanged -= OnTerritoryChanged;
+
         GC.SuppressFinalize(this);
     }
 
     private void OnDutyStarted(object? sender, ushort e)
     {
         if (DalamudService.ClientState.IsPvPExcludingDen) return;
-        if (!_isInAllowedContentType || _isInIgnoredTerritory) return;
+        if (!TerritoryIsValidDuty()) return;
 
         DalamudService.Log.Debug("Duty started");
 
@@ -109,88 +104,69 @@ public class DutyEvent : IDisposable
 
     private void OnFrameworkUpdate(IFramework framework)
     {
-        CheckIfPlayerIsBoundByDuty();
-        CheckPartyMembers();
+        CheckPartyMembersConnectionStatus();
     }
-        
-    private void CheckIfPlayerIsBoundByDuty()
+
+    private void OnTerritoryChanged(TerritoryType? territoryType)
     {
-        if (!_isLoggedIn) return;
-
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
-            DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
-            DalamudService.Condition[ConditionFlag.BoundByDuty95];
-        
-        // Ignore Island Sanctuary
-        bool currentTerritoryExists = DalamudService.DataManager.Excel
-            .GetSheet<TerritoryType>()
-            .TryGetRow(DalamudService.ClientState.TerritoryType, out TerritoryType currentTerritory);
-        if (!currentTerritoryExists) return;
+                                 DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
+                                 DalamudService.Condition[ConditionFlag.BoundByDuty95];
 
-        _currentTerritory = currentTerritory;
-        isNextBoundByDuty = isNextBoundByDuty && _currentTerritory?.TerritoryIntendedUse.RowId != 49;
-        _isInIgnoredTerritory = _territoriesToIgnore.Contains(_currentTerritory?.RowId);
-        bool isNextInAllowedContentType = _allowedContentTypes.Contains(_currentTerritory?.ContentFinderCondition.Value.ContentType.Value.RowId);
-        
+        if (!isNextBoundByDuty) _partyMembers = [];
+
         // Consider duty failed if it wasn't completed before leaving duty
-        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !_isInIgnoredTerritory && _isInAllowedContentType && Configuration.Instance.EnableDutyFailedEvent)
+        if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !TerritoryIsValidDuty() && Configuration.Instance.EnableDutyFailedEvent)
         {
             AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
 
         _isBoundByDuty = isNextBoundByDuty;
-        _isInAllowedContentType = isNextInAllowedContentType;
     }
 
-    private void CheckPartyMembers()
+    private void CheckPartyMembersConnectionStatus()
     {
-        if (!_isBoundByDuty || _isInIgnoredTerritory) return;
+        if (!_isBoundByDuty) return;
         if (DalamudService.PartyList.Length == 0) return;
         if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
 
-        uint[] partyStatusObjIds = _partyStatus.Keys.ToArray();
-        uint[] partyListObjIds = DalamudService.PartyList.Select(x => x.ObjectId).ToArray();
-
-        // If the party member isn't in cache, remove them
-        foreach (uint objId in partyStatusObjIds)
-        {
-            if (!partyListObjIds.Contains(objId)) _partyStatus.Remove(objId);
-        }
-        
         foreach (IPartyMember partyMember in DalamudService.PartyList)
         {
-            // Skip if they're not in the same instance
-            if (!partyMember.Territory.ValueNullable.Equals(_currentTerritory)) continue;
-            
-            uint objId = partyMember.ObjectId;
-            _partyStatus.TryAdd(objId, null);
-            
-            uint? nextStatus = null;
-            uint? lastStatus = _partyStatus[objId];
+            string partyMemberName = $"{partyMember.Name}@{partyMember.World.Value.Name}";
 
-            IPlayerCharacter? player = DalamudUtility.GetPlayerCharacterFromPartyMember(partyMember);
-            if (player == null) continue;
-            
-            OnlineStatus? onlineStatus = player.OnlineStatus.ValueNullable;
-            
-            if (onlineStatus != null) nextStatus = player.OnlineStatus.RowId;
-            if (nextStatus == lastStatus) continue;
-            
-            _partyStatus[objId] = nextStatus;
-            DalamudService.Log.Debug("Party member status changed = {PlayerId} {PlayerName}, {PreviousOnlineStatus} -> {NextOnlineStatus}", 
-                objId, partyMember.Name, lastStatus!, nextStatus!);
+            if (!_partyMembers.TryAdd(partyMemberName, partyMember.ObjectId)) continue;
+            DalamudService.Log.Debug("Added party member: [{Id}] {Name}", partyMember.ObjectId, partyMemberName);
+        }
 
-            if (!_dutyStarted) return;
-            
-            // Assume the player went offline (or left the instance)
-            if (nextStatus == null && Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
+        foreach (string partyMemberName in _partyMembers.Keys)
+        {
+            IPartyMember? partyMember = DalamudService.PartyList
+                .FirstOrDefault(x => $"{x.Name}@{x.World.Value.Name}" == partyMemberName);
+
+            // Status is unchanged, continue
+            if (_partyMembers[partyMemberName] == partyMember?.ObjectId) continue;
+
+            // They likely left or disconnected
+            if (partyMember?.ObjectId == 0)
             {
-                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+                DalamudService.Log.Debug("Party member disconnected: [{Id}] {Name}", _partyMembers[partyMemberName], partyMemberName);
+                _partyMembers[partyMemberName] = 0;
+
+                if (Configuration.Instance.EnableDutyPlayerDisconnectedEvent)
+                {
+                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Disconnect);
+                }
             }
-            // Assume the player reconnected
-            else if (lastStatus == null && Configuration.Instance.EnableDutyPlayerReconnectedEvent)
+            // They likely reconnected
+            else if (partyMember != null)
             {
-                AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+                _partyMembers[partyMemberName] = partyMember.ObjectId;
+                DalamudService.Log.Debug("Party member reconnected: [{Id}] {Name}", _partyMembers[partyMemberName], partyMemberName);
+
+                if (Configuration.Instance.EnableDutyPlayerReconnectedEvent)
+                {
+                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Reconnect);
+                }
             }
         }
     }
@@ -270,5 +246,17 @@ public class DutyEvent : IDisposable
                 AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.EncounterComplete);
             });
         }
+    }
+
+    private bool TerritoryIsValidDuty()
+    {
+        bool isNextInAllowedContentType = _allowedContentTypes.Contains(
+            TerritoryService.Instance.CurrentTerritory?.ContentFinderCondition.Value.ContentType.Value.RowId);
+        bool isInIgnoredTerritory = _ignoredTerritories.Contains(
+            TerritoryService.Instance.CurrentTerritory?.RowId);
+        bool isInIgnoredIntendedUse = _ignoredIntendedUses.Contains(
+            TerritoryService.Instance.CurrentTerritory?.TerritoryIntendedUse.Value.RowId);
+
+        return isNextInAllowedContentType && !isInIgnoredTerritory && !isInIgnoredIntendedUse;
     }
 }
