@@ -111,25 +111,31 @@ public class PvpEvent : IDisposable
                 string? player1Name = XivUtility.GetFullPlayerName(player1);
                 string? player2Name = XivUtility.GetFullPlayerName(player2);
 
-                if (IsInParty(player1) && IsInPartyAndProbablyDead(player1))
+                if (IsInParty(player1))
                 {
-                    killerName = player2Name;
-                    killedName = player1Name;
+                    if (IsInPartyAndProbablyDead(player1))
+                    {
+                        killerName = player2Name;
+                        killedName = player1Name;
+                    }
+                    else
+                    {
+                        killerName = player1Name;
+                        killedName = player2Name;
+                    }
                 }
-                else if (IsInParty(player1) && !IsInPartyAndProbablyDead(player1))
+                else if (IsInParty(player2))
                 {
-                    killerName = player1Name;
-                    killedName = player2Name;
-                }
-                else if (IsInParty(player2) && IsInPartyAndProbablyDead(player2))
-                {
-                    killerName = player1Name;
-                    killedName = player2Name;
-                }
-                else if (IsInParty(player2) && !IsInPartyAndProbablyDead(player2))
-                {
-                    killerName = player2Name;
-                    killedName = player1Name;
+                    if (IsInPartyAndProbablyDead(player2))
+                    {
+                        killerName = player1Name;
+                        killedName = player2Name;
+                    }
+                    else
+                    {
+                        killerName = player2Name;
+                        killedName = player1Name;
+                    }
                 }
 
                 break;
