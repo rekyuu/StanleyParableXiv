@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Party;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Common.Configuration;
@@ -132,5 +135,35 @@ public static unsafe class XivUtility
     public static bool PlayerIsInHighEndDuty()
     {
         return TerritoryIsHighEndDuty(DalamudService.ClientState.TerritoryType);
+    }
+
+    public static string? GetFullPlayerName(IPlayerCharacter? player)
+    {
+        string? name = player?.Name.TextValue;
+        string? world = player?.HomeWorld.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    public static string? GetFullPlayerName(IPartyMember? player)
+    {
+        string? name = player?.Name.TextValue;
+        string? world = player?.World.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    public static string? GetFullPlayerName(PlayerPayload? player)
+    {
+        string? name = player?.PlayerName;
+        string? world = player?.World.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    private static string? GetFullPlayerName(string? name, string? world)
+    {
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(world)) return null;
+        return $"{name}@{world}";
     }
 }

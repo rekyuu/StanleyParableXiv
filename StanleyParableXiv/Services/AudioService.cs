@@ -622,11 +622,11 @@ public class AudioService : IDisposable
             // Fix killing spree lines being louder than others
             if (result.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
             {
-                DalamudService.Log.Debug("Lowering volume for Killing Spree line");
+                DalamudService.Log.Verbose("Lowering volume for Killing Spree line");
                 _sampleProvider.Volume = _killingSpreeVolume;
             }
 
-            DalamudService.Log.Debug("Playing {Result} for event {Event}", result, @event);
+            DalamudService.Log.Debug("Playing for {Event} event", @event);
             PlaySound(result);
 
             if (result == "announcer_dlc_stanleyparable/announcer_respawn_09") _adviceFollowUp = true;
@@ -647,7 +647,7 @@ public class AudioService : IDisposable
         if (_isPlaying) return;
 
         string audioPath = GetFilepathForResource(resourcePath);
-        DalamudService.Log.Debug("Attempting to play {AudioPath}", audioPath);
+        DalamudService.Log.Verbose("Attempting to play {AudioPath}", audioPath);
 
         if (!File.Exists(audioPath))
         {
@@ -702,7 +702,7 @@ public class AudioService : IDisposable
         // Restore fix killing spree lines being louder than others
         if (_lastPlayedClip.StartsWith("announcer_dlc_stanleyparable_killing_spree"))
         {
-            DalamudService.Log.Debug("Restoring volume for Killing Spree line");
+            DalamudService.Log.Verbose("Restoring volume for Killing Spree line");
             _sampleProvider.Volume = _originalVolume;
         }
         

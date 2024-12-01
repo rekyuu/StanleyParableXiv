@@ -14,7 +14,6 @@ namespace StanleyParableXiv.Events;
 public class DutyEvent : IDisposable
 {
     private bool _isBoundByDuty = false;
-    private bool _dutyStarted = false;
     private bool _dutyCompleted = false;
     private Dictionary<string, uint> _partyMembers = new();
 
@@ -72,7 +71,6 @@ public class DutyEvent : IDisposable
 
         DalamudService.Log.Debug("Duty started");
 
-        _dutyStarted = true;
         _dutyCompleted = false;
 
         if (!Configuration.Instance.EnableDutyStartEvent) return;
@@ -109,12 +107,13 @@ public class DutyEvent : IDisposable
 
     private void OnTerritoryChanged(TerritoryType? territoryType)
     {
+        if (DalamudService.ClientState.IsPvPExcludingDen) return;
+
         bool isNextBoundByDuty = DalamudService.Condition[ConditionFlag.BoundByDuty] ||
                                  DalamudService.Condition[ConditionFlag.BoundByDuty56] ||
                                  DalamudService.Condition[ConditionFlag.BoundByDuty95];
 
         if (!isNextBoundByDuty) _partyMembers = [];
-        else _dutyStarted = true; // In case of a player restarting their game while in instance, etc... probably
 
         // Consider duty failed if it wasn't completed before leaving duty
         if (_isBoundByDuty && !isNextBoundByDuty && !_dutyCompleted && !TerritoryIsValidDuty() && Configuration.Instance.EnableDutyFailedEvent)
@@ -128,12 +127,14 @@ public class DutyEvent : IDisposable
     private void CheckPartyMembersConnectionStatus()
     {
         if (!_isBoundByDuty) return;
+        if (DalamudService.ClientState.IsPvPExcludingDen) return;
         if (DalamudService.PartyList.Length == 0) return;
         if (DalamudService.Condition[ConditionFlag.BetweenAreas]) return;
 
         foreach (IPartyMember partyMember in DalamudService.PartyList)
         {
-            string partyMemberName = $"{partyMember.Name}@{partyMember.World.Value.Name}";
+            string? partyMemberName = XivUtility.GetFullPlayerName(partyMember);
+            if (string.IsNullOrEmpty(partyMemberName)) continue;
 
             if (!_partyMembers.TryAdd(partyMemberName, partyMember.ObjectId)) continue;
             DalamudService.Log.Debug("Added party member: [{Id}] {Name}", partyMember.ObjectId, partyMemberName);
@@ -142,7 +143,7 @@ public class DutyEvent : IDisposable
         foreach (string partyMemberName in _partyMembers.Keys)
         {
             IPartyMember? partyMember = DalamudService.PartyList
-                .FirstOrDefault(x => $"{x.Name}@{x.World.Value.Name}" == partyMemberName);
+                .FirstOrDefault(x => XivUtility.GetFullPlayerName(x) == partyMemberName);
 
             // Status is unchanged, continue
             if (_partyMembers[partyMemberName] == partyMember?.ObjectId) continue;
@@ -174,10 +175,7 @@ public class DutyEvent : IDisposable
 
     private void PlayDutyCompleteAudio()
     {
-        if (!_dutyStarted && _dutyCompleted) return;
-        
-        _dutyStarted = false;
-        _dutyCompleted = true;
+        if (!TerritoryIsValidDuty()) return;
 
         if (XivUtility.PlayerIsInHighEndDuty())
         {

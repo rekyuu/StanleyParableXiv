@@ -75,7 +75,7 @@ public sealed class Plugin : IDalamudPlugin
 
     public void Dispose()
     {
-        DalamudService.Log.Information("Disposing StanleyParableXiv! -----------------------------");
+        DalamudService.Log.Information("Stopping StanleyParableXiv! ------------------------------");
             
         _eventService.Dispose();
         AudioService.Instance.Dispose();

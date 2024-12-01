@@ -2,32 +2,44 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Dalamud.Game.ClientState.Objects.SubKinds;
 using Dalamud.Game.Network;
 using Dalamud.Game.Text;
 using Dalamud.Game.Text.SeStringHandling;
 using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Lumina.Excel.Sheets;
 using StanleyParableXiv.Services;
+using StanleyParableXiv.Utility;
 
 namespace StanleyParableXiv.Events;
 
 public class PvpEvent : IDisposable
 {
-    private readonly string _playerName;
-
     private bool _firstBlood = false;
 
     private Dictionary<string, uint> _killStreaks = new();
     private Dictionary<string, uint> _multikills = new();
     private Dictionary<string, DateTimeOffset> _multikillCooldowns = new();
 
+    private readonly uint?[] _frontlineTerritoryIds =
+    [
+        376, // Borderland Ruins
+        431, // Seal Rock
+        554, // The Fields of Glory
+        888, // Onsal Hakair
+    ];
+
+    private readonly uint?[] _rivalWingsTerritoryIds =
+    [
+        729, // Astragalos
+        791, // Hidden Gorge
+    ];
+
     /// <summary>
     /// Fires on specific PvP related events.
     /// </summary>
     public PvpEvent()
     {
-        _playerName = DalamudService.ClientState.LocalPlayer?.Name.TextValue!;
-
         DalamudService.ClientState.EnterPvP += OnEnterPvP;
         DalamudService.ClientState.LeavePvP += OnLeavePvp;
         DalamudService.ChatGui.ChatMessage += OnChatMessage;
@@ -52,10 +64,6 @@ public class PvpEvent : IDisposable
         if (!DalamudService.ClientState.IsPvPExcludingDen) return;
 
         DalamudService.Log.Debug("Entering PvP");
-
-        DalamudService.Log.Debug("Current PvP territory: {Name}, RowId: {RowId}",
-            TerritoryService.Instance.CurrentTerritory?.Name.ExtractText() ?? string.Empty,
-            TerritoryService.Instance.CurrentTerritory?.RowId ?? 0);
 
         if (Configuration.Instance.EnablePvpPrepareEvent)
         {
@@ -85,19 +93,11 @@ public class PvpEvent : IDisposable
 
         if (playerPayloads.Length == 0) return;
 
-        DalamudService.Log.Verbose("Player payloads: {Payloads}", playerPayloads.Select(x => x?.PlayerName));
-
-        // TextPayload?[] rawPayloads = message.Payloads
-        //     .Where(x => x.Type == PayloadType.RawText)
-        //     .Select(x => x as TextPayload)
-        //     .ToArray();
-        // DalamudService.Log.Verbose("Text payloads: {Payloads}", rawPayloads.Select(x => x?.Text));
-
         DateTimeOffset killTime = DateTimeOffset.Now;
         bool chatLogKillStreaks = Configuration.Instance.EnablePvpChatEvent;
 
-        string? killerName;
-        string? killedName;
+        string? killerName = null;
+        string? killedName = null;
 
         switch (type)
         {
@@ -108,31 +108,52 @@ public class PvpEvent : IDisposable
 
                 if (player1 == null || player2 == null) return;
 
-                if (IsProbablyDead(player2))
+                string? player1Name = XivUtility.GetFullPlayerName(player1);
+                string? player2Name = XivUtility.GetFullPlayerName(player2);
+
+                if (IsInParty(player1) && IsInPartyAndProbablyDead(player1))
                 {
-                    killerName = $"{player1.PlayerName}@{player1.World.Value.Name}";
-                    killedName = $"{player2.PlayerName}@{player2.World.Value.Name}";
+                    killerName = player2Name;
+                    killedName = player1Name;
                 }
-                else
+                else if (IsInParty(player1) && !IsInPartyAndProbablyDead(player1))
                 {
-                    killerName = $"{player2.PlayerName}@{player2.World.Value.Name}";
-                    killedName = $"{player1.PlayerName}@{player1.World.Value.Name}";
+                    killerName = player1Name;
+                    killedName = player2Name;
+                }
+                else if (IsInParty(player2) && IsInPartyAndProbablyDead(player2))
+                {
+                    killerName = player1Name;
+                    killedName = player2Name;
+                }
+                else if (IsInParty(player2) && !IsInPartyAndProbablyDead(player2))
+                {
+                    killerName = player2Name;
+                    killedName = player1Name;
                 }
 
                 break;
             }
             case (XivChatType)2874 when playerPayloads.Length == 1:
             {
+                PlayerPayload? otherPlayer = playerPayloads[0];
+                IPlayerCharacter? localPlayer = DalamudService.ClientState.LocalPlayer;
+
+                if (otherPlayer == null || localPlayer == null) return;
+
+                string? otherPlayerName = XivUtility.GetFullPlayerName(otherPlayer);
+                string? localPlayerName = XivUtility.GetFullPlayerName(localPlayer);
+
                 // Determine who killed who depending on if you died or not.
-                if (DalamudService.ClientState.LocalPlayer?.IsDead == true)
+                if (localPlayer.IsDead)
                 {
-                    killerName = playerPayloads[0]?.PlayerName;
-                    killedName = _playerName;
+                    killerName = otherPlayerName;
+                    killedName = localPlayerName;
                 }
                 else
                 {
-                    killerName = _playerName;
-                    killedName = playerPayloads[0]?.PlayerName;
+                    killerName = localPlayerName;
+                    killedName = otherPlayerName;
                 }
 
                 break;
@@ -159,18 +180,22 @@ public class PvpEvent : IDisposable
 
         // Update multikills.
         // Multikills are performed within a 15-second window. The timer is refreshed on kill.
-        if (!_multikillCooldowns.TryGetValue(killerName, out DateTimeOffset lastKillTime) || lastKillTime <= killTime)
+        // Resets to 0 on death.
+        if (!_multikillCooldowns.TryGetValue(killerName, out DateTimeOffset multikillExpireTime) ||
+            multikillExpireTime <= killTime)
         {
             _multikills[killerName] = 1;
         }
-        else if (lastKillTime > killTime)
+        else if (multikillExpireTime > killTime)
         {
             _multikills[killerName] += 1;
         }
 
-        _multikillCooldowns[killerName] = DateTimeOffset.Now + TimeSpan.FromSeconds(15);
+        _multikills[killedName] = 0;
+        _multikillCooldowns[killedName] = DateTimeOffset.UtcNow;
+        _multikillCooldowns[killerName] = DateTimeOffset.UtcNow.AddSeconds(15);
 
-        DalamudService.Log.Debug("{KillerName} multikill streak: {Count}", killerName, _multikills[killerName]);
+        DalamudService.Log.Verbose("{KillerName} multikill streak: {Count}", killerName, _multikills[killerName]);
 
         bool multikills = Configuration.Instance.EnablePvpMultikillsEvent;
 
@@ -206,7 +231,7 @@ public class PvpEvent : IDisposable
 
         bool playKillStreaks = Configuration.Instance.EnablePvpKillStreaksEvent;
 
-        DalamudService.Log.Debug("{KillerName} kill streak: {Count}", killerName, _killStreaks[killerName]);
+        DalamudService.Log.Verbose("{KillerName} kill streak: {Count}", killerName, _killStreaks[killerName]);
 
         switch (_killStreaks[killerName])
         {
@@ -284,9 +309,16 @@ public class PvpEvent : IDisposable
         }
     }
 
-    private static unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
+    private unsafe void OnGameNetworkMessage(IntPtr dataPtr, ushort opCode, uint sourceActorId, uint targetActorId,
         NetworkMessageDirection direction)
     {
+        // Crystalline Conflict countdown starts at 30s
+        int pvpCountdownLength = 30_000;
+        // Frontline starts countdown starts at 45s
+        if (_frontlineTerritoryIds.Contains(TerritoryService.Instance.CurrentTerritory?.RowId)) pvpCountdownLength = 45_000;
+        // Rival Wings starts countdown starts at 45s
+        else if (_rivalWingsTerritoryIds.Contains(TerritoryService.Instance.CurrentTerritory?.RowId)) pvpCountdownLength = 45_000;
+
         ushort cat = *(ushort*)(dataPtr + 0x00);
         uint updateType = *(uint*)(dataPtr + 0x08);
 
@@ -296,12 +328,16 @@ public class PvpEvent : IDisposable
             case 0x6D when updateType == 0x40000004:
                 if (Configuration.Instance.EnablePvpCountdownStartEvent)
                 {
-                    AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+                    Task.Delay(pvpCountdownLength - 30_000).ContinueWith(_ =>
+                    {
+                        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+                    });
                 }
 
                 if (Configuration.Instance.EnablePvpCountdown10Event)
                 {
-                    Task.Delay(20_000).ContinueWith(_ =>
+
+                    Task.Delay(pvpCountdownLength - 10_000).ContinueWith(_ =>
                     {
                         AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
                     });
@@ -312,7 +348,7 @@ public class PvpEvent : IDisposable
             case 0x355 when updateType == 0x1F4:
                 if (Configuration.Instance.EnablePvpWinEvent)
                 {
-                    Task.Delay(3000).ContinueWith(_ =>
+                    Task.Delay(3_000).ContinueWith(_ =>
                     {
                         AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.PvpWin);
                     });
@@ -339,12 +375,18 @@ public class PvpEvent : IDisposable
         else if (DalamudService.ClientState.IsPvP) OnLeavePvp();
     }
 
-    private static bool IsProbablyDead(PlayerPayload playerPayload)
+    private static bool IsInParty(PlayerPayload playerPayload)
     {
         return DalamudService.PartyList.Any(
             player =>
-                player.Name.TextValue == playerPayload.PlayerName &&
-                player.World.RowId == playerPayload.World.RowId &&
+                XivUtility.GetFullPlayerName(player) == XivUtility.GetFullPlayerName(playerPayload));
+    }
+
+    private static bool IsInPartyAndProbablyDead(PlayerPayload playerPayload)
+    {
+        return DalamudService.PartyList.Any(
+            player =>
+                XivUtility.GetFullPlayerName(player) == XivUtility.GetFullPlayerName(playerPayload) &&
                 player.CurrentHP <= 0);
     }
 
