@@ -9,7 +9,7 @@
   <PropertyGroup>
     <Authors>rekyuu</Authors>
     <Company>rekyuu</Company>
-    <Version>3.2.0.0-testing.0</Version>
+    <Version>3.2.0.0</Version>
     <Description>Witty commentary to the brilliant things you do.</Description>
     <Copyright>rekyuu</Copyright>
     <PackageProjectUrl>https://github.com/rekyuu/StanleyParableXiv</PackageProjectUrl>
