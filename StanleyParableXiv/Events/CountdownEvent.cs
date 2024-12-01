@@ -38,7 +38,7 @@ public class CountdownEvent : IDisposable
             
         float countdownValue = Marshal.PtrToStructure<float>((IntPtr)value + 0x2c);
         
-        DalamudService.Log.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
+        // DalamudService.Log.Verbose("Countdown Timer hook value = {CountdownValue}", countdownValue);
 
         // Reset on countdown completion
         if (countdownValue <= 0f)
@@ -52,14 +52,14 @@ public class CountdownEvent : IDisposable
         // Countdown started
         if (!_countdownStartPlayed)
         {
-            if (Configuration.Instance.EnableCountdownStartEvent) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
+            if (Configuration.Instance.EnableCountdownStartEvent) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.CountdownStart);
             _countdownStartPlayed = true;
         }
 
         // Countdown has 10 seconds remaining
         if (_countdownStartPlayed && !_countdown10Played && countdownValue < 10f)
         {
-            if (Configuration.Instance.EnableCountdown10Event) AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
+            if (Configuration.Instance.EnableCountdown10Event) AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Countdown10);
             _countdown10Played = true;
         }
 

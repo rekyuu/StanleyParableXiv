@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using Dalamud.Game.ClientState.Objects.SubKinds;
+using Dalamud.Game.ClientState.Party;
+using Dalamud.Game.Text.SeStringHandling.Payloads;
 using Dalamud.Memory;
 using FFXIVClientStructs.FFXIV.Client.System.Framework;
 using FFXIVClientStructs.FFXIV.Common.Configuration;
@@ -20,8 +23,10 @@ public enum XivVolumeSource
     Master
 }
 
-public static class XivUtility
+public static unsafe class XivUtility
 {
+    private static readonly SystemConfig ConfigBase = Framework.Instance()->SystemConfig.SystemConfigBase;
+    
     private static readonly Dictionary<XivVolumeSource, string> XivVolumeSourceMap = new()
     {
         { XivVolumeSource.Bgm, "Bgm" },
@@ -33,36 +38,29 @@ public static class XivUtility
         { XivVolumeSource.Master, "Master" },
     };
 
+    private static readonly Dictionary<string, int> SoundConfigMap = [];
+
+    static XivUtility()
+    {
+        InitializeSoundConfigMap();
+    }
+
     /// <summary>
     /// Gets the volume amount of the supplied FFXIV channel.
     /// </summary>
     /// <param name="soundType">The FFXIV volume channel.</param>
     /// <returns>The volume amount between 0-100.</returns>
     /// <exception cref="Exception">Will be thrown if the supplied channel is not found.</exception>
-    public static unsafe uint GetVolume(XivVolumeSource soundType)
+    public static uint GetVolume(XivVolumeSource soundType)
     {
         string volumeSourceName = XivVolumeSourceMap[soundType];
         string volumeSourceAmountKey = $"Sound{volumeSourceName}";
         string volumeSourceMutedKey = $"IsSnd{volumeSourceName}";
 
-        uint? volumeAmount = null;
-        bool? volumeMuted = null;
-        
         try
         {
-            Framework* framework = Framework.Instance();
-            SystemConfig configBase = framework->SystemConfig.SystemConfigBase;
-
-            for (int i = 0; i < configBase.ConfigCount; i++)
-            {
-                ConfigEntry entry = configBase.ConfigEntry[i];
-                if (entry.Name == null) continue;
-
-                string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(entry.Name));
-
-                if (name == volumeSourceAmountKey) volumeAmount = entry.Value.UInt;
-                else if (name == volumeSourceMutedKey) volumeMuted = entry.Value.UInt == 1;
-            }
+            uint? volumeAmount = GetVolumeForConfigEntry(SoundConfigMap[volumeSourceAmountKey]);
+            bool? volumeMuted = GetIsMutedForConfigEntry(SoundConfigMap[volumeSourceMutedKey]);
 
             if (volumeAmount == null || volumeMuted == null)
             {
@@ -76,6 +74,29 @@ public static class XivUtility
             DalamudService.Log.Error(ex, "An exception occurred while obtaining volume");
             return 50;
         }
+    }
+
+    private static void InitializeSoundConfigMap()
+    {
+        for (int i = 0; i < ConfigBase.ConfigCount; i++)
+        {
+            ConfigEntry entry = ConfigBase.ConfigEntry[i];
+            if (entry.Name == null) continue;
+
+            string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(entry.Name));
+
+            if (name.StartsWith("Sound") || name.StartsWith("IsSnd")) SoundConfigMap.Add(name, i);
+        }
+    }
+
+    private static uint? GetVolumeForConfigEntry(int index)
+    {
+        return ConfigBase.ConfigEntry[index].Value.UInt;
+    }
+
+    private static bool? GetIsMutedForConfigEntry(int index)
+    {
+        return ConfigBase.ConfigEntry[index].Value.UInt == 1;
     }
 
     /// <summary>
@@ -114,5 +135,35 @@ public static class XivUtility
     public static bool PlayerIsInHighEndDuty()
     {
         return TerritoryIsHighEndDuty(DalamudService.ClientState.TerritoryType);
+    }
+
+    public static string? GetFullPlayerName(IPlayerCharacter? player)
+    {
+        string? name = player?.Name.TextValue;
+        string? world = player?.HomeWorld.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    public static string? GetFullPlayerName(IPartyMember? player)
+    {
+        string? name = player?.Name.TextValue;
+        string? world = player?.World.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    public static string? GetFullPlayerName(PlayerPayload? player)
+    {
+        string? name = player?.PlayerName;
+        string? world = player?.World.Value.Name.ExtractText();
+
+        return GetFullPlayerName(name, world);
+    }
+
+    private static string? GetFullPlayerName(string? name, string? world)
+    {
+        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(world)) return null;
+        return $"{name}@{world}";
     }
 }

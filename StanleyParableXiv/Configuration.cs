@@ -14,6 +14,17 @@ public class Configuration : IPluginConfiguration
     public int Version { get; set; } = 0;
 
     /// <summary>
+    /// The
+    /// </summary>
+    public OutputType OutputType { get; set; } = OutputType.DirectSound;
+
+    public Guid DirectOutDevice { get; set; } = Guid.Empty;
+
+    public string AsioDevice { get; set; } = "";
+
+    public string WasapiDevice { get; set; } = "";
+
+    /// <summary>
     /// The manual volume set by the user.
     /// </summary>
     public uint Volume { get; set; } = 50;
