@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using Dalamud.Interface.Components;
@@ -25,8 +26,98 @@ public class ConfigurationWindow : Window, IDisposable
     {
         if (ImGui.BeginTabBar("##StanleyParableConfigurationTabBar", ImGuiTabBarFlags.None))
         {
-            if (ImGui.BeginTabItem("Volume"))
+            if (ImGui.BeginTabItem("Output"))
             {
+                OutputType outputType = Configuration.Instance.OutputType;
+                int outputTypeState = (int)outputType;
+                string[] outputTypeOptions =
+                [
+                    "WaveOut",
+                    "DirectSound",
+                    "ASIO",
+                    "WASAPI"
+                ];
+
+                if (ImGui.Combo("##OutputType", ref outputTypeState, outputTypeOptions,
+                        outputTypeOptions.Length))
+                {
+                    Configuration.Instance.OutputType = (OutputType)outputTypeState;
+                    Configuration.Instance.Save();
+
+                    AudioService.Instance.InitializeOutputDevice();
+                }
+
+                switch (outputType)
+                {
+                    case OutputType.WaveOut:
+                        ImGui.Text("The default audio device will be used.");
+                        break;
+                    case OutputType.DirectSound:
+                        int directOutDeviceState = AudioService.Instance.DirectOutAudioDevices.Values
+                            .ToList()
+                            .IndexOf(Configuration.Instance.DirectOutDevice);
+
+                        if (ImGui.Combo("##DirectOutDevice", ref directOutDeviceState,
+                                AudioService.Instance.DirectOutAudioDevices.Keys.ToArray(),
+                                AudioService.Instance.DirectOutAudioDevices.Count))
+                        {
+                            Configuration.Instance.DirectOutDevice =
+                                AudioService.Instance.DirectOutAudioDevices.ElementAt(directOutDeviceState).Value;
+                            Configuration.Instance.Save();
+
+                            AudioService.Instance.InitializeOutputDevice();
+                        }
+
+                        break;
+                    case OutputType.Asio:
+                        int asioDeviceState = AudioService.Instance.AsioAudioDevices
+                            .IndexOf(Configuration.Instance.AsioDevice);
+
+                        if (ImGui.Combo("##AsioDevice", ref asioDeviceState,
+                                AudioService.Instance.AsioAudioDevices.ToArray(),
+                                AudioService.Instance.AsioAudioDevices.Count))
+                        {
+                            Configuration.Instance.AsioDevice =
+                                AudioService.Instance.AsioAudioDevices.ElementAt(asioDeviceState);
+                            Configuration.Instance.Save();
+
+                            AudioService.Instance.InitializeOutputDevice();
+                        }
+
+                        break;
+                    case OutputType.Wasapi:
+                        int wasapiDeviceState = AudioService.Instance.WasapiAudioDevices.Values
+                            .ToList()
+                            .IndexOf(Configuration.Instance.WasapiDevice);
+
+                        if (ImGui.Combo("##WasapiDevice", ref wasapiDeviceState,
+                                AudioService.Instance.WasapiAudioDevices.Keys.ToArray(),
+                                AudioService.Instance.WasapiAudioDevices.Count))
+                        {
+                            Configuration.Instance.WasapiDevice =
+                                AudioService.Instance.WasapiAudioDevices.ElementAt(wasapiDeviceState).Value;
+                            Configuration.Instance.Save();
+
+                            AudioService.Instance.InitializeOutputDevice();
+                        }
+
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
+                if (ImGui.Button("Refresh audio devices"))
+                {
+                    AudioService.Instance.UpdateAudioDevices();
+                }
+
+                if (!string.IsNullOrEmpty(AudioService.Instance.OutputDeviceFailureException))
+                {
+                    ImGui.Text($"Unable to initialize audio device: {AudioService.Instance.OutputDeviceFailureException}");
+                }
+
+                ImGui.Separator();
+
                 int bindToXivVolumeSourceState = Configuration.Instance.BindToXivVolumeSource ? 1 : 0;
                 string[] bindToXivVolumeSourceOptions =
                 {
@@ -40,7 +131,7 @@ public class ConfigurationWindow : Window, IDisposable
                     Configuration.Instance.BindToXivVolumeSource = bindToXivVolumeSourceState == 1;
                     Configuration.Instance.Save();
                     
-                    AudioPlayer.Instance.UpdateVolume();
+                    AudioService.Instance.UpdateVolume();
                 }
 
                 if (Configuration.Instance.BindToXivVolumeSource)
@@ -63,7 +154,7 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.XivVolumeSource = (XivVolumeSource)xivVolumeSourceState;
                         Configuration.Instance.Save();
 
-                        AudioPlayer.Instance.UpdateVolume();
+                        AudioService.Instance.UpdateVolume();
                     }
                     
                     int volumeBoostValue = (int)Configuration.Instance.XivVolumeSourceBoost;
@@ -72,7 +163,7 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.XivVolumeSourceBoost = (uint)volumeBoostValue;
                         Configuration.Instance.Save();
 
-                        AudioPlayer.Instance.UpdateVolume();
+                        AudioService.Instance.UpdateVolume();
                     }
                 }
                 else
@@ -83,7 +174,7 @@ public class ConfigurationWindow : Window, IDisposable
                         Configuration.Instance.Volume = (uint)volumeValue;
                         Configuration.Instance.Save();
 
-                        AudioPlayer.Instance.UpdateVolume();
+                        AudioService.Instance.UpdateVolume();
                     }
                 }
                 
@@ -102,7 +193,7 @@ public class ConfigurationWindow : Window, IDisposable
                         Array events = Enum.GetValues(typeof(AudioEvent));
                         AudioEvent result = (AudioEvent)events.GetValue(random.Next(events.Length))!;
                     
-                        AudioPlayer.Instance.PlayRandomSoundFromCategory(result);
+                        AudioService.Instance.PlayRandomSoundFromCategory(result);
                     }
                 }
                     
@@ -420,7 +511,7 @@ public class ConfigurationWindow : Window, IDisposable
                     uint baseVolume = XivUtility.GetVolume(Configuration.Instance.XivVolumeSource);
                     uint masterVolume = XivUtility.GetVolume(XivVolumeSource.Master);
                     uint baseVolumeBoost = Configuration.Instance.XivVolumeSourceBoost;
-                    float targetVolume = AudioPlayer.GetBoundVolume(baseVolume, masterVolume, baseVolumeBoost);
+                    float targetVolume = AudioService.GetBoundVolume(baseVolume, masterVolume, baseVolumeBoost);
 
                     ImGui.Separator();
 

@@ -37,7 +37,7 @@ public class LoginEvent : IDisposable
         
         if (isLoading || !Configuration.Instance.EnableLoginEvent) return;
         
-        AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Login);
+        AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Login);
         _hasLoggedIn = true;
     }
 

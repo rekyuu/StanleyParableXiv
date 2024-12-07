@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
+  
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework> <!-- Requires override due to NAudio trying to add WinForms shit -->
+  </PropertyGroup>
+  
   <PropertyGroup>
     <Authors>rekyuu</Authors>
     <Company>rekyuu</Company>
-    <Version>3.1.1.0</Version>
+    <Version>3.2.0.0</Version>
     <Description>Witty commentary to the brilliant things you do.</Description>
     <Copyright>rekyuu</Copyright>
     <PackageProjectUrl>https://github.com/rekyuu/StanleyParableXiv</PackageProjectUrl>
@@ -11,64 +17,10 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <Platforms>x64</Platforms>
-    <Nullable>enable</Nullable>
-    <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-  </PropertyGroup>
-
-  <PropertyGroup>
-    <DalamudLibPath>$(appdata)\XIVLauncher\addon\Hooks\dev\</DalamudLibPath>
-    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-  </PropertyGroup>
-  
-   <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))'">
-    <DalamudLibPath>$(DALAMUD_HOME)/</DalamudLibPath>
-  </PropertyGroup>
-  
-   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
-     <NoWarn>1701;1702;IL2121;CA1416</NoWarn>
-   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="DalamudPackager" Version="11.0.0" />
-    <PackageReference Include="NAudio" Version="2.2.1" />
-    <Reference Include="FFXIVClientStructs">
-      <HintPath>$(DalamudLibPath)FFXIVClientStructs.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(DalamudLibPath)Newtonsoft.Json.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Dalamud">
-      <HintPath>$(DalamudLibPath)Dalamud.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="ImGui.NET">
-      <HintPath>$(DalamudLibPath)ImGui.NET.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="ImGuiScene">
-      <HintPath>$(DalamudLibPath)ImGuiScene.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Lumina">
-      <HintPath>$(DalamudLibPath)Lumina.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-    <Reference Include="Lumina.Excel">
-      <HintPath>$(DalamudLibPath)Lumina.Excel.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-
-  <PropertyGroup>
     <NoWarn>CA1416</NoWarn> <!-- Validate platform compatibility -->
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+  </ItemGroup>
 </Project>

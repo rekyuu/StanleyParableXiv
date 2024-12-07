@@ -35,7 +35,7 @@ public class SynthesisFailedEvent : IDisposable
 
         if (message.TextValue.Contains(_synthesisFailedMessage) && Configuration.Instance.EnableSynthesisFailedEvent)
         {
-            AudioPlayer.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
+            AudioService.Instance.PlayRandomSoundFromCategory(AudioEvent.Failure);
         }
     }
 }
