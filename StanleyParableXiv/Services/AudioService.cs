@@ -521,23 +521,44 @@ public class AudioService : IDisposable
     public void UpdateAudioDevices()
     {
         DirectOutAudioDevices = new Dictionary<string, Guid> {{"Default", Guid.Empty}};
-        foreach (DirectSoundDeviceInfo? device in DirectSoundOut.Devices)
+        try
         {
-            DirectOutAudioDevices.TryAdd(device.Description, device.Guid);
+            foreach (DirectSoundDeviceInfo? device in DirectSoundOut.Devices)
+            {
+                DirectOutAudioDevices.TryAdd(device.Description, device.Guid);
+            }
+        }
+        catch (Exception ex)
+        {
+            DalamudService.Log.Warning(ex, "Unable to get DirectSound devices");
         }
 
         AsioAudioDevices = ["Default"];
-        foreach (string device in AsioOut.GetDriverNames())
+        try
         {
-            AsioAudioDevices.Add(device);
+            foreach (string device in AsioOut.GetDriverNames())
+            {
+                AsioAudioDevices.Add(device);
+            }
+        }
+        catch (Exception ex)
+        {
+            DalamudService.Log.Warning(ex, "Unable to get ASIO devices");
         }
 
         WasapiAudioDevices = new Dictionary<string, string> {{"Default", ""}};
-        MMDeviceEnumerator enumerator = new();
-        foreach (MMDevice? device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+        try
         {
-            if (device == null) continue;
-            WasapiAudioDevices.TryAdd($"{device.FriendlyName}", device.ID);
+            MMDeviceEnumerator enumerator = new();
+            foreach (MMDevice? device in enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active))
+            {
+                if (device == null) continue;
+                WasapiAudioDevices.TryAdd($"{device.FriendlyName}", device.ID);
+            }
+        }
+        catch (Exception ex)
+        {
+            DalamudService.Log.Warning(ex, "Unable to get WASAPI devices");
         }
     }
 
