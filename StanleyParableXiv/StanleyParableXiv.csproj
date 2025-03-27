@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
-  <Import Project="Dalamud.Plugin.Bootstrap.targets"/>
-  
+<Project Sdk="Dalamud.NET.Sdk/12.0.2">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework> <!-- Requires override due to NAudio trying to add WinForms shit -->
+    <TargetFramework>net9.0</TargetFramework> <!-- Requires override due to NAudio trying to add WinForms shit -->
   </PropertyGroup>
   
   <PropertyGroup>
     <Authors>rekyuu</Authors>
     <Company>rekyuu</Company>
-    <Version>3.2.1.0</Version>
+    <Version>3.3.0.0</Version>
     <Description>Witty commentary to the brilliant things you do.</Description>
     <Copyright>rekyuu</Copyright>
     <PackageProjectUrl>https://github.com/rekyuu/StanleyParableXiv</PackageProjectUrl>
@@ -22,5 +20,6 @@
 
   <ItemGroup>
     <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Update="DalamudPackager" Version="12.0.0" />
   </ItemGroup>
 </Project>

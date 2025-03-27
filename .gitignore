@@ -7,3 +7,5 @@ riderModule.iml
 *.DotSettings.user
 assets.zip
 assets/manifest.json
+flake-profile*
+nohup.out

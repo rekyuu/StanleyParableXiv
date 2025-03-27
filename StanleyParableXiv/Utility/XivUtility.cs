@@ -81,7 +81,7 @@ public static unsafe class XivUtility
         for (int i = 0; i < ConfigBase.ConfigCount; i++)
         {
             ConfigEntry entry = ConfigBase.ConfigEntry[i];
-            if (entry.Name == null) continue;
+            if (!entry.Name.HasValue) continue;
 
             string name = MemoryHelper.ReadStringNullTerminated(new IntPtr(entry.Name));
 
